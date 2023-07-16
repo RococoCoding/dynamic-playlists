@@ -11,12 +11,12 @@ const track = {
     { name: "" }
   ]
 };
+type Props = { token: string }
 
-function WebPlayback(props) {
-
+function WebPlayback(props: Props) {
   const [is_paused, setPaused] = useState(false);
   const [is_active, setActive] = useState(false);
-  const [player, setPlayer] = useState(undefined);
+  const [player, setPlayer] = useState<undefined | Spotify.Player>(undefined);
   const [current_track, setTrack] = useState(track);
 
   useEffect(() => {
@@ -65,20 +65,19 @@ function WebPlayback(props) {
     };
   }, []);
 
-  if (!is_active) {
-    return (
-      <>
-        <div className="container">
-          <div className="main-wrapper">
-            <b> Instance not active. Transfer your playback using your Spotify app </b>
+  return (
+    <div data-testid="web-playback">
+      {!is_active ?
+        <>
+          <div id="web-playback" className="container">
+            <div className="main-wrapper">
+              <b> Instance not active. Transfer your playback using your Spotify app </b>
+            </div>
           </div>
-        </div>
-      </>);
-  } else {
-    return (
-      <>
-        <div className="container">
-          { current_track &&
+        </>
+        :
+        <div id="web-playback" className="container">
+          {player && current_track &&
             <div className="main-wrapper">
               <img src={current_track?.album.images[0].url} className="now-playing__cover" alt="" />
 
@@ -101,9 +100,9 @@ function WebPlayback(props) {
             </div>
           }
         </div>
-      </>
-    );
-  }
+      }
+    </div>
+  );
 }
 
 export default WebPlayback;

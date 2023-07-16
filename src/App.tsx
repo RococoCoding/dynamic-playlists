@@ -21,7 +21,7 @@ function App() {
 
   return (
     <>
-      {(token === '') ? <Login /> : <WebPlayback token={token} />}
+      {(token === '') ? <Login /> : <WebPlayback data-testid='web-playback' token={token} />}
     </>
   );
 }

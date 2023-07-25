@@ -18,8 +18,10 @@
     "strict": true,
   },
   "include": [
-    "node_modules",
-    "dist",
     "src/server/**/*",
   ],
+  "exclude": [
+    "node_modules",
+    "dist",
+  ]
 }

@@ -23,13 +23,13 @@ app.use(bodyParser.urlencoded({
 // App Configuration
 app.use(router);
 
-const pool = new Pool({
+export const pool = new Pool({
   user: process.env.DB_USER,
   connectionString: process.env.DATABASE_URL,
   password: process.env.DB_PASSWORD,
 });
 
-
 app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);
 });
+

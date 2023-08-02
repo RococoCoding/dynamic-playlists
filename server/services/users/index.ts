@@ -1,8 +1,8 @@
-import { pool } from '../../../server/index';
-import { User } from '../../../types';
+import { pool } from '../../index.js';
+
 
 const findUser = async (id: string) => {
-  const { rows } = await pool.query<User>('SELECT * FROM users WHERE id = $1', [id]);
+  const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
   if (rows.length > 1) {
     console.log(`Multiple users found for user ${id}: `, rows);
     throw new Error('More than one user found');

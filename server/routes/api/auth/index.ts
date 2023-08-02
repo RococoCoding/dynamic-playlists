@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { generateRandomString } from '../../../utils';
+import { generateRandomString } from '../../../utils/index.js';
 import request from 'request';
 
 const authRouter = Router();

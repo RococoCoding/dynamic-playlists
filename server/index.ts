@@ -1,9 +1,9 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import { Pool } from 'pg';
+import pkg from 'pg';
 import bodyParser from 'body-parser';
 import cors from 'cors';
-import router from './routes/index';
+import router from './routes/index.js';
 
 const port = 5000;
 
@@ -22,7 +22,7 @@ app.use(bodyParser.urlencoded({
 
 // App Configuration
 app.use(router);
-
+const { Pool } = pkg;
 export const pool = new Pool({
   user: process.env.DB_USER,
   connectionString: process.env.DATABASE_URL,

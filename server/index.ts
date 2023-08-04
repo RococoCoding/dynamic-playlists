@@ -1,13 +1,11 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import pkg from 'pg';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import router from './routes/index.js';
+import { DATABASE_URL, DB_PASSWORD, DB_USER } from './constants/index.js';
 
 const port = 5000;
-
-dotenv.config();
 
 const app = express();
 app.set('appName', 'Dynamic Playlists');
@@ -24,9 +22,9 @@ app.use(bodyParser.urlencoded({
 app.use(router);
 const { Pool } = pkg;
 export const pool = new Pool({
-  user: process.env.DB_USER,
-  connectionString: process.env.DATABASE_URL,
-  password: process.env.DB_PASSWORD,
+  user: DB_USER,
+  connectionString: DATABASE_URL,
+  password: DB_PASSWORD,
 });
 
 app.listen(port, () => {

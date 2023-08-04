@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import callApi from '../utils/callApi';
 import callSpotifyApi from '../utils/callSpotifyApi';
+import { SPOTIFY_BASE_URL } from '../constants';
 
 const track = {
   name: "",
@@ -23,6 +25,7 @@ function WebPlayback(props: Props) {
   useEffect(() => {
     (async () => {
       console.log("deviceId", deviceId);
+      // set playback device to be dynamic playlists app
       await callSpotifyApi({
         data: {
           device_ids: [deviceId],
@@ -32,6 +35,22 @@ function WebPlayback(props: Props) {
         path: "me/player",
         token: props.token
       })
+
+      // get spotify profile with user id
+      const { data: { id: spotifyUserId } } = await callApi({
+        baseUrl: SPOTIFY_BASE_URL,
+        method: "GET",
+        path: "me",
+        token: props.token
+      });
+      console.log('Retrieved Spotify user id', spotifyUserId);
+      // get / upsert dp uesr
+      if (spotifyUserId) {
+        await callApi({
+          method: "GET",
+          path: `users/${spotifyUserId}`,
+        });
+      }
     })();
   }, [deviceId, props.token]);
 

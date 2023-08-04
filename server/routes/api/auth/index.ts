@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { generateRandomString } from '../../../utils/index.js';
 import request from 'request';
+import { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_REDIRECT_URI } from '../../../constants/index.js';
 
 const authRouter = Router();
 
-const spotify_client_id = process.env.SPOTIFY_CLIENT_ID;
-const spotify_client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-const redirect_uri = process.env.SPOTIFY_REDIRECT_URI;
+const spotify_client_id = SPOTIFY_CLIENT_ID;
+const spotify_client_secret = SPOTIFY_CLIENT_SECRET;
+const redirect_uri = SPOTIFY_REDIRECT_URI;
 let access_token = '';
 
 authRouter.get('/login', (req, res) => {

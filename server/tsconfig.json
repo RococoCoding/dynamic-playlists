@@ -19,10 +19,5 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx"
-  },
-  "include": [
-    "client",
-    "server",
-    "server"
-  ],
+  }
 }

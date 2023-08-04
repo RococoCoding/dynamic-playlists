@@ -11,11 +11,6 @@ const findUser = async (id: string) => {
   return rows[0];
 };
 
-const findAllUsers = async () => { 
-  const { rows } = await pool.query('SELECT * FROM dp_user');
-  return rows;
-};
-
 const insertUser = async (id: string) => {
   const { rows } = await pool.query(
     'INSERT INTO dp_user (id) VALUES ($1) RETURNING *',
@@ -34,7 +29,6 @@ const deleteUser = async (id: string) => {
 
 export {
   deleteUser,
-  findAllUsers,
   findUser,
   insertUser
 }

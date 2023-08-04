@@ -44,7 +44,7 @@ function WebPlayback(props: Props) {
         token: props.token
       });
       console.log('Retrieved Spotify user id', spotifyUserId);
-      // get / upsert dp uesr
+      // get / upsert dp user
       if (spotifyUserId) {
         await callApi({
           method: "GET",

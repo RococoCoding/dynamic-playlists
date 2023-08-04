@@ -27,13 +27,11 @@ const callApi = async ({
   token,
 }: Props): Promise<any> => {
   try {
-    console.log(baseUrl)
     const axiosInput: AxiosInput = {
         method,
         url: `${baseUrl || '/api/'}${path}`,
         data,
     }
-    console.log({ axiosInput });
     if (token) {
       axiosInput.headers = { Authorization: `Bearer ${token}` }
     }

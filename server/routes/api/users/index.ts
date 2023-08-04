@@ -3,13 +3,12 @@ import { deleteUser, findUser, insertUser } from '../../../services/users/index.
 
 const usersRouter = Router();
 
-// Find user
+// Find / upsert user
 usersRouter.get('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
     const user = await findUser(id);
-
     if (!user) {
       await insertUser(id);
     }
@@ -17,6 +16,7 @@ usersRouter.get('/:id', async (req: Request, res: Response) => {
     return res.status(200);
   } catch (err: any) {
     const errMsg = err?.message || err;
+    console.log(errMsg);
     res.status(500).send(errMsg);
   }
 });

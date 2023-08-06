@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { deleteUser, findUser, insertUser } from '../../../services/users/index.js';
+import { deleteUser, findUser, insertUser } from '../../../services/user/index.js';
 
 const usersRouter = Router();
 

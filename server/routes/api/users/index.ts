@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { deleteUser, findUser, insertUser } from '../../../services/users/index.js';
+import { deleteUser, findUser, insertUser } from '../../../services/user/index.js';
+import { getPlaylistsByUserId } from '../../../services/playlist/index.js';
 
 const usersRouter = Router();
 
@@ -8,29 +9,17 @@ usersRouter.get('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
-    const user = await findUser(id);
+    let user = await findUser(id);
     if (!user) {
-      await insertUser(id);
+      user = await insertUser(id);
+    } else {
+      const playlists = await getPlaylistsByUserId(id);
+      user.playlists = playlists;
     }
-
-    return res.status(200);
+    return res.status(200).send(user);
   } catch (err: any) {
     const errMsg = err?.message || err;
-    console.log(errMsg);
-    res.status(500).send(errMsg);
-  }
-});
-
-// Insert new user
-usersRouter.post('/', async (req: Request, res: Response) => {
-  const { id } = req.body;
-
-  try {
-    await insertUser(id);
-    return res.status(200);
-  } catch (err: any) {
-    const errMsg = err?.message || err;
-    res.status(500).send(errMsg);
+    return res.status(500).send(errMsg);
   }
 });
 
@@ -40,11 +29,10 @@ usersRouter.delete('/:id', async (req: Request, res: Response) => {
 
   try {
     await deleteUser(id);
-
-    res.status(200).send('User deleted');
+    return res.status(200).send('User deleted');
   } catch (err: any) {
     const errMsg = err?.message || err;
-    res.status(500).send(errMsg);
+    return res.status(500).send(errMsg);
   }
 });
 

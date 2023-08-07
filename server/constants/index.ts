@@ -9,3 +9,5 @@ export const {
   DB_URL,
   DATABASE_URL,
 } = process.env;
+
+export const VALID_SLOT_TYPES = ['playlist', 'album', 'track', 'artist'];

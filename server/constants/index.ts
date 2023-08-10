@@ -11,3 +11,4 @@ export const {
 } = process.env;
 
 export const VALID_SLOT_TYPES = ['playlist', 'album', 'track', 'artist'];
+export const SPOTIFY_BASE_URL = 'https://api.spotify.com/v1/';

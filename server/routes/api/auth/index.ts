@@ -14,7 +14,7 @@ const accessTokenMap = new Map();
 
 authRouter.get('/login', (req, res) => {
   console.log('login start');
-  const scope = "streaming user-modify-playback-state user-read-private playlist-modify-public";
+  const scope = "streaming user-read-email user-modify-playback-state user-read-private playlist-modify-public";
 
   const state = generateRandomString(16);
 

@@ -119,6 +119,10 @@ function WebPlayback({ token }: Props) {
         console.error(message);
       });
 
+      player.addListener('playback_error', ({ message }) => {
+        console.log(message);
+      });
+
       player.addListener('account_error', ({ message }) => {
         console.error(message);
       });
@@ -132,7 +136,7 @@ function WebPlayback({ token }: Props) {
         setActive(false);
 
         player.getCurrentState().then(state => {
-          (!state) ? setActive(false) : setActive(true);
+          (state?.paused) ? setActive(false) : setActive(true);
         });
 
       }));

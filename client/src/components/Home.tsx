@@ -22,6 +22,12 @@ const YourLibraryPaper = styled(Paper)({
   background: 'transparent'
 });
 
+const WebPlaybackContainer = styled(Box)({
+  position: 'fixed',
+  bottom: '0',
+  width: '100%'
+});
+
 function Home() {
   const { userid } = useParams();
   const [token, setToken] = useState('');
@@ -81,9 +87,9 @@ function Home() {
         </YourLibraryPaper>
 
         {token &&
-          <Box>
+          <WebPlaybackContainer>
             <WebPlayback token={token} />
-          </Box>
+          </WebPlaybackContainer>
         }
       </MainContainer>
     </div>

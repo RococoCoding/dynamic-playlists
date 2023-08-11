@@ -7,19 +7,19 @@ import { useParams } from 'react-router-dom';
 import { SERVER_BASE_URL } from '../constants';
 
 const MainContainer = styled(Container)({
-  paddingTop: '20px',
-  paddingBottom: '20px',
+  padding: '20px 0px 30px 0px'
 });
 
 const YourLibraryTitle = styled(Typography)({
   fontSize: '24px',
   fontWeight: 'bold',
   marginBottom: '15px',
+  color: 'white',
 });
 
 const YourLibraryPaper = styled(Paper)({
   padding: '20px',
-  marginBottom: '40px',
+  background: 'transparent'
 });
 
 function Home() {
@@ -31,12 +31,16 @@ function Home() {
     async function getToken() {
       const response = await fetch(`${SERVER_BASE_URL}auth/token/${userid}`);
       const json = await response.json();
+      console.log(json.access_token);
+      if (!json.access_token) {
+        window.location.href = `${SERVER_BASE_URL}auth/login`
+      }
       setToken(json.access_token);
     }
 
     getToken();
 
-  }, []);
+  }, [userid]);
 
   // placeholder data
   const playlists = [
@@ -56,7 +60,9 @@ function Home() {
     <div>
       <AppBar position="static">
         <Toolbar>
-          DYNAMIC PLAYLISTS
+          <Typography variant="h6" component="div" sx={{ textAlign: 'center', flexGrow: 1 }}>
+            DYNAMIC PLAYLISTS
+          </Typography>
         </Toolbar>
       </AppBar>
 

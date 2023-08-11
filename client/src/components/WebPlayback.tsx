@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import callSpotifyApi from '../utils/callSpotifyApi';
 import { Button, Card, CardContent, CardMedia, Typography } from '@mui/material';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PauseIcon from '@mui/icons-material/Pause';
+import SkipNextIcon from '@mui/icons-material/SkipNext';
+import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import { styled } from '@mui/material/styles';
 
 const PlayerCard = styled(Card)({
@@ -8,8 +12,17 @@ const PlayerCard = styled(Card)({
   flexDirection: 'column',
   alignItems: 'center',
   backgroundColor: '#282828',
-  padding: '20px',
-  height: '20%'
+  padding: '5px',
+  height: '20%',
+  width: '100%',
+  margin: '0'
+});
+
+const TrackInfoContainer = styled('div')({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '100%',
 });
 
 const TrackImage = styled(CardMedia)({
@@ -22,24 +35,25 @@ const TrackImage = styled(CardMedia)({
 
 const TrackInfo = styled(CardContent)({
   color: 'white',
+  width: '80%',
+  padding: '5px !important',
 });
 
 const TrackTitle = styled(Typography)({
   fontSize: '14px',
   fontWeight: 'bold',
   marginBottom: '5px',
+  maxWidth: '75%',
 });
 
 const TrackArtist = styled(Typography)({
   fontSize: '12px',
+  maxWidth: '75%',
 });
 
 const ControlButton = styled(Button)({
-  backgroundColor: '#1db954',
   color: 'white',
   borderRadius: '50%',
-  width: '40px',
-  height: '40px',
   fontSize: '18px',
   display: 'flex',
   alignItems: 'center',
@@ -49,10 +63,6 @@ const ControlButton = styled(Button)({
 });
 
 const PlayerControls = styled('div')({
-  display: 'flex',
-});
-
-const TrackInfoContainer = styled('div')({
   display: 'flex',
 });
 
@@ -131,11 +141,12 @@ function WebPlayback({ token }: Props) {
         if (!state) {
           return;
         }
-        console.log('player state changed', state)
+
         setTrack(state.track_window.current_track);
         setActive(false);
 
         player.getCurrentState().then(state => {
+          console.log(state);
           (state?.paused) ? setActive(false) : setActive(true);
         });
 
@@ -149,23 +160,33 @@ function WebPlayback({ token }: Props) {
     <div id="web-playback" className="container">
       {player &&
         <PlayerCard id="web-playback">
-          <TrackInfoContainer>
-            {/* @ts-expect-error */}
-            <TrackImage component="img" image={currentTrack?.album.images[0].url} alt="Album cover thumbnail" />
-            <TrackInfo>
-              <TrackTitle variant="subtitle1">{currentTrack?.name || 'No track selected'}</TrackTitle>
-              <TrackArtist variant="subtitle2">{currentTrack?.artists[0]?.name || ''}</TrackArtist>
-            </TrackInfo>
-          </TrackInfoContainer>
+          {currentTrack && 
+            <TrackInfoContainer>
+              {/* @ts-expect-error */}
+              <TrackImage component="img" image={currentTrack.album.images[0].url} alt="Album cover thumbnail" />
+              <TrackInfo>
+                <div className="scroll-container">
+                  <div className={currentTrack.name.length > 22 ? "scroll-content" : ""}>
+                    <TrackTitle variant="subtitle1">{currentTrack.name || 'No track selected'}</TrackTitle>
+                  </div>
+                </div>
+                <div className="scroll-container">
+                  <div className={currentTrack.artists[0]?.name.length > 22 ? "scroll-content" : ""}>
+                    <TrackArtist variant="subtitle2">{currentTrack.artists[0]?.name || ''}</TrackArtist>
+                  </div>
+                </div>
+              </TrackInfo>
+            </TrackInfoContainer>
+          }
           <PlayerControls>
             <ControlButton onClick={() => { player.previousTrack(); }}>
-              &lt;&lt;
+              <SkipPreviousIcon fontSize='small' />
             </ControlButton>
             <ControlButton onClick={() => { player.togglePlay(); }}>
-              {isActive ? "PAUSE" : "PLAY"}
+              {isActive ? <PauseIcon fontSize='small' /> : <PlayArrowIcon fontSize='small' />}
             </ControlButton>
             <ControlButton onClick={() => { player.nextTrack(); }}>
-              &gt;&gt;
+              <SkipNextIcon fontSize='small' />
             </ControlButton>
           </PlayerControls>
         </PlayerCard>

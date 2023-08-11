@@ -3,7 +3,7 @@ import { Playlist } from '../../types/index.js';
 
 const getPlaylistById = async (id: string): Promise<Playlist | null> => {
   const { rows } = await pool.query(
-    `SELECT playlist.*, slots.*
+    `SELECT playlist.*, slot.*
      FROM playlist
      JOIN slot ON playlist.id = slot.playlist_id
      WHERE playlist.id = $1`,
@@ -14,7 +14,7 @@ const getPlaylistById = async (id: string): Promise<Playlist | null> => {
 
 const getPlaylistsByUserId = async (userId: string): Promise<Playlist[]> => {
   const { rows } = await pool.query(
-    `SELECT playlist.*, slots.*
+    `SELECT playlist.*, slot.*
      FROM playlist
      JOIN slot ON playlist.id = slot.playlist_id
      WHERE created_by = $1`,

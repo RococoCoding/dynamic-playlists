@@ -43,7 +43,6 @@ body {
   bottom: 0;
   background-size: cover;
   background-position: center center;
-  /*filter: blur(8em) opacity(0.6);*/
   position: absolute;
 }
 
@@ -118,4 +117,28 @@ body {
 
 img {
   background: transparent;
+}
+.max-width-75 {
+  max-width: 75%;
+}
+
+.scroll-container {
+  overflow: hidden;
+  position: relative;
+}
+
+.scroll-content {
+  display: inline-block;
+  white-space: nowrap;
+  animation: scroll-left 15s linear infinite;
+}
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(100%);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
 }

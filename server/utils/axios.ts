@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { SERVER_BASE_URL } from '../constants';
 
 type Props = {
   baseUrl?: string;
@@ -20,7 +19,7 @@ type AxiosInput = {
   headers?: Header;
 }
 
-const callApi = async ({
+const useAxios = async ({
   baseUrl,
   method,
   path,
@@ -30,7 +29,7 @@ const callApi = async ({
   try {
     const axiosInput: AxiosInput = {
         method,
-        url: `${baseUrl || `${SERVER_BASE_URL}api/`}${path}`,
+        url: `${baseUrl}${path}`,
         data,
     }
     if (token) {
@@ -44,12 +43,12 @@ const callApi = async ({
       data: res.data,
     };
   } catch (error: any) {
-    console.log('callApi input: ', { baseUrl, method, path, data, token });
-    console.log('callApi error: ', error);
+    console.log('axios input: ', { baseUrl, method, path, data, token });
+    console.log('axios error: ', error);
     return {
       errorMsg: error?.message || error,
     };
   }
 };
 
-export default callApi;
+export default useAxios;

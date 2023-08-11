@@ -1,7 +1,70 @@
 import { useState, useEffect } from 'react';
-import callApi from '../utils/callApi';
 import callSpotifyApi from '../utils/callSpotifyApi';
-import { SPOTIFY_BASE_URL } from '../constants';
+import { Button, Card, CardContent, CardMedia, Typography } from '@mui/material';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PauseIcon from '@mui/icons-material/Pause';
+import SkipNextIcon from '@mui/icons-material/SkipNext';
+import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
+import { styled } from '@mui/material/styles';
+
+const PlayerCard = styled(Card)({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  backgroundColor: '#282828',
+  padding: '5px',
+  height: '20%',
+  width: '100%',
+  margin: '0'
+});
+
+const TrackInfoContainer = styled('div')({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '100%',
+});
+
+const TrackImage = styled(CardMedia)({
+  width: '30px',
+  height: '30px',
+  objectFit: 'cover',
+  borderRadius: '4px',
+  marginRight: '15px',
+});
+
+const TrackInfo = styled(CardContent)({
+  color: 'white',
+  width: '80%',
+  padding: '5px !important',
+});
+
+const TrackTitle = styled(Typography)({
+  fontSize: '14px',
+  fontWeight: 'bold',
+  marginBottom: '5px',
+  maxWidth: '75%',
+});
+
+const TrackArtist = styled(Typography)({
+  fontSize: '12px',
+  maxWidth: '75%',
+});
+
+const ControlButton = styled(Button)({
+  color: 'white',
+  borderRadius: '50%',
+  fontSize: '18px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  margin: '0 5px',
+});
+
+const PlayerControls = styled('div')({
+  display: 'flex',
+});
 
 const track = {
   name: "",
@@ -16,43 +79,10 @@ const track = {
 };
 type Props = { token: string }
 
-function WebPlayback(props: Props) {
+function WebPlayback({ token }: Props) {
   const [isActive, setActive] = useState<null | boolean>();
   const [player, setPlayer] = useState<undefined | Spotify.Player>(undefined);
   const [currentTrack, setTrack] = useState(track);
-  const [deviceId, setDeviceId] = useState('');
-
-  useEffect(() => {
-    (async () => {
-      console.log("deviceId", deviceId);
-      // set playback device to be dynamic playlists app
-      await callSpotifyApi({
-        data: {
-          device_ids: [deviceId],
-          play: false
-        },
-        method: "PUT",
-        path: "me/player",
-        token: props.token
-      })
-
-      // get spotify profile with user id
-      const { data: { id: spotifyUserId } } = await callApi({
-        baseUrl: SPOTIFY_BASE_URL,
-        method: "GET",
-        path: "me",
-        token: props.token
-      });
-      console.log('Retrieved Spotify user id', spotifyUserId);
-      // get / upsert dp user
-      if (spotifyUserId) {
-        await callApi({
-          method: "GET",
-          path: `users/${spotifyUserId}`,
-        });
-      }
-    })();
-  }, [deviceId, props.token]);
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -65,7 +95,7 @@ function WebPlayback(props: Props) {
 
       const player = new window.Spotify.Player({
         name: 'Web Playback SDK',
-        getOAuthToken: cb => { cb(props.token); },
+        getOAuthToken: cb => { cb(token); },
         volume: 0.5
       });
 
@@ -73,7 +103,18 @@ function WebPlayback(props: Props) {
 
       player.addListener('ready', async ({ device_id }) => {
         console.log('Ready with Device ID', device_id);
-        setDeviceId(device_id);
+        if (!device_id) {
+          throw new Error('Device ID is null');
+        }
+        await callSpotifyApi({
+          data: {
+            device_ids: [device_id],
+            play: false
+          },
+          method: "PUT",
+          path: "me/player",
+          token: token
+        });
       });
 
       player.addListener('not_ready', ({ device_id }) => {
@@ -88,12 +129,15 @@ function WebPlayback(props: Props) {
         console.error(message);
       });
 
+      player.addListener('playback_error', ({ message }) => {
+        console.log(message);
+      });
+
       player.addListener('account_error', ({ message }) => {
         console.error(message);
       });
 
-      player.addListener('player_state_changed', (state => {
-
+      player.addListener('player_state_changed', ((state) => {
         if (!state) {
           return;
         }
@@ -102,7 +146,8 @@ function WebPlayback(props: Props) {
         setActive(false);
 
         player.getCurrentState().then(state => {
-          (!state) ? setActive(false) : setActive(true);
+          console.log(state);
+          (state?.paused) ? setActive(false) : setActive(true);
         });
 
       }));
@@ -112,31 +157,40 @@ function WebPlayback(props: Props) {
   }, []);
 
   return (
-    <div data-testid="web-playback">
-      <div id="web-playback" className="container">
-        {player && currentTrack &&
-          <div className="main-wrapper">
-            <img src={currentTrack?.album.images[0].url} className="now-playing__cover" alt="" />
-
-            <div className="now-playing__side">
-              <div className="now-playing__name">{currentTrack.name}</div>
-              <div className="now-playing__artist">{currentTrack.artists[0].name}</div>
-
-              <button className="btn-spotify" onClick={() => { player.previousTrack(); }} >
-                &lt;&lt;
-              </button>
-
-              <button className="btn-spotify" onClick={() => { player.togglePlay(); }} >
-                {isActive ? "PAUSE" : "PLAY"}
-              </button>
-
-              <button className="btn-spotify" onClick={() => { player.nextTrack(); }} >
-                &gt;&gt;
-              </button>
-            </div>
-          </div>
-        }
-      </div>
+    <div id="web-playback" className="container">
+      {player &&
+        <PlayerCard id="web-playback">
+          {currentTrack && 
+            <TrackInfoContainer>
+              {/* @ts-expect-error */}
+              <TrackImage component="img" image={currentTrack.album.images[0].url} alt="Album cover thumbnail" />
+              <TrackInfo>
+                <div className="scroll-container">
+                  <div className={currentTrack.name.length > 22 ? "scroll-content" : ""}>
+                    <TrackTitle variant="subtitle1">{currentTrack.name || 'No track selected'}</TrackTitle>
+                  </div>
+                </div>
+                <div className="scroll-container">
+                  <div className={currentTrack.artists[0]?.name.length > 22 ? "scroll-content" : ""}>
+                    <TrackArtist variant="subtitle2">{currentTrack.artists[0]?.name || ''}</TrackArtist>
+                  </div>
+                </div>
+              </TrackInfo>
+            </TrackInfoContainer>
+          }
+          <PlayerControls>
+            <ControlButton onClick={() => { player.previousTrack(); }}>
+              <SkipPreviousIcon fontSize='small' />
+            </ControlButton>
+            <ControlButton onClick={() => { player.togglePlay(); }}>
+              {isActive ? <PauseIcon fontSize='small' /> : <PlayArrowIcon fontSize='small' />}
+            </ControlButton>
+            <ControlButton onClick={() => { player.nextTrack(); }}>
+              <SkipNextIcon fontSize='small' />
+            </ControlButton>
+          </PlayerControls>
+        </PlayerCard>
+      }
     </div>
   );
 }

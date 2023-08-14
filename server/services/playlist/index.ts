@@ -33,11 +33,8 @@ const createPlaylist = async (playlist: Omit<Playlist, 'id' | 'created_at' | 'la
   );
   const playlistRow = rows[0];
   await pool.query(
-    `INSERT INTO playlist_editor (playlist_id, created_by)
-     VALUES ($1, $2)
-     WHERE NOT EXISTS (
-       SELECT 1 FROM playlist_editor WHERE playlist_id = $1 AND editor_id = $2
-     )`,
+    `INSERT INTO playlist_editor (playlist_id, editor_id)
+    VALUES ($1, $2)`,
     [playlistRow.id, created_by]
   );
   return playlistRow;

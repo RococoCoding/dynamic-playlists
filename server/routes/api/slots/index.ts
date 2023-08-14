@@ -7,9 +7,9 @@ import {
   updateSlot
 } from '../../../services/slot/index.js';
 
-const router = express.Router();
+const slotsRouter = express.Router();
 
-router.get('/:id', async (req, res) => {
+slotsRouter.get('/:id', async (req, res) => {
   const slot = await getSlotById(req.params.id);
   if (slot) {
     res.json(slot);
@@ -18,17 +18,17 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.get('/by-playlist/:playlistId', async (req, res) => {
+slotsRouter.get('/by-playlist/:playlistId', async (req, res) => {
   const slots = await getSlotsByPlaylistId(req.params.playlistId);
   res.json(slots);
 });
 
-router.post('/', async (req, res) => {
+slotsRouter.post('/', async (req, res) => {
   const slot = await createSlot(req.body);
   res.json(slot);
 });
 
-router.put('/:id', async (req, res) => {
+slotsRouter.put('/:id', async (req, res) => {
   const slot = await updateSlot(req.params.id, req.body);
   if (slot) {
     res.json(slot);
@@ -37,9 +37,9 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+slotsRouter.delete('/:id', async (req, res) => {
   await deleteSlot(req.params.id);
   res.send('Slot deleted');
 });
 
-export default router;
+export default slotsRouter;

@@ -54,14 +54,16 @@ const updatePlaylist = async (id: string, playlist: Partial<Omit<Playlist, 'id' 
   );
   const playlistRow = rows[0];
   if (!playlistRow) throw new Error('Possible error updating. Updated playlist not returned.');
-  await pool.query(
-    `INSERT INTO playlist_editor (playlist_id, last_updated_by)
-     VALUES ($1, $2)
-     WHERE NOT EXISTS (
-       SELECT 1 FROM playlist_editor WHERE playlist_id = $1 AND editor_id = $2
-     )`,
-    [playlistRow.id, last_updated_by]
-  );
+  try {
+    await pool.query(
+      `INSERT INTO playlist_editor (playlist_id, editor_id)
+       VALUES ($1, $2)`,
+      [playlistRow.id, last_updated_by]
+    );
+  } catch (e) {
+    // TODO: ignore if unique constraint error, but pass on other errors
+    console.log('Error updating playlist_editor: ', e);
+  }
   return playlistRow;
 };
 

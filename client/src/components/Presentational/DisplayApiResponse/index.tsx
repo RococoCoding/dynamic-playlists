@@ -1,15 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Grid from '@mui/material/Grid';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert from '@mui/material/Alert';
-import { AxiosError } from 'axios';
 
 interface Props {
   // Callback function to run after the snackbar closes
   closeSnackbar: () => void;
 
   // Error returned by API call
-  error?: AxiosError<any> | undefined | null;
+  error?: string | undefined | null;
 
   // Loading state of API call
   loading?: boolean;
@@ -18,7 +17,7 @@ interface Props {
   severity?: 'error' | 'success';
 
   // Message to display on success
-  successMessage: string;
+  successMessage?: string;
 }
 
 const DisplayApiResponse = ({
@@ -56,7 +55,7 @@ const DisplayApiResponse = ({
               severity={severity}
               variant="filled"
             >
-              {error ? (error.message || error.response?.data?.message) : successMessage}
+              {error ? error : successMessage}
             </MuiAlert>
           </Snackbar>
         </Grid>

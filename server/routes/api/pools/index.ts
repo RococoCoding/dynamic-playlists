@@ -16,7 +16,7 @@ poolsRouter.get('/:id', async (req: Request, res: Response) => {
     return res.status(200).send(pool);
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 
@@ -30,7 +30,7 @@ poolsRouter.get('/pools/:spotifyId', async (req: Request, res: Response) => {
     return res.status(200).send(pools);
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 
@@ -43,7 +43,7 @@ poolsRouter.post('/', async (req: Request, res: Response) => {
     return res.status(201).send(newPool);
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 
@@ -60,7 +60,7 @@ poolsRouter.put('/last-updated/:id', async (req: Request, res: Response) => {
     return res.status(200).send(updatedPool);
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 
@@ -73,7 +73,7 @@ poolsRouter.delete('/:id', async (req: Request, res: Response) => {
     return res.status(200).send('Pool deleted');
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 

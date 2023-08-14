@@ -16,7 +16,7 @@ playlistsRouter.get('/:id', async (req: Request, res: Response) => {
     return res.status(200).send(playlist);
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 
@@ -29,7 +29,7 @@ playlistsRouter.get('/by-user/:userId', async (req: Request, res: Response) => {
     return res.status(200).send(playlists);
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 
@@ -42,7 +42,7 @@ playlistsRouter.post('/', async (req: Request, res: Response) => {
     return res.status(201).send(newPlaylist);
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 
@@ -59,7 +59,7 @@ playlistsRouter.put('/:id', async (req: Request, res: Response) => {
     return res.status(200).send(updatedPlaylist);
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 
@@ -72,7 +72,7 @@ playlistsRouter.delete('/:id', async (req: Request, res: Response) => {
     return res.status(200).send('Playlist deleted');
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 

@@ -23,7 +23,7 @@ poolTracksRouter.get('/:id', async (req: Request, res: Response) => {
     return res.status(200).send(poolTrack);
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 
@@ -36,7 +36,7 @@ poolTracksRouter.get('/by-pool/:poolId', async (req: Request, res: Response) => 
     return res.status(200).send(poolTracks);
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 
@@ -52,7 +52,7 @@ poolTracksRouter.get('/by-spotify-track-id/:spotifyTrackId', async (req: Request
     return res.status(200).send(poolTrack);
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 
@@ -65,7 +65,7 @@ poolTracksRouter.get('/by-spotify-artist-id/:spotifyArtistId', async (req: Reque
     return res.status(200).send(poolTracks);
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 
@@ -78,7 +78,7 @@ poolTracksRouter.post('/', async (req: Request, res: Response) => {
     return res.status(201).send('Pool tracks inserted');
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 
@@ -91,7 +91,7 @@ poolTracksRouter.delete('/by-pool/:poolId', async (req: Request, res: Response) 
     return res.status(200).send('Pool tracks deleted');
   } catch (err: any) {
     const errMsg = err?.message || err;
-    return res.status(500).send(errMsg);
+    return res.status(500).json({ error: errMsg});
   }
 });
 

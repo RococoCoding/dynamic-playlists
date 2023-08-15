@@ -59,6 +59,7 @@ function Home() {
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist>();
   const [apiError, setApiError] = useState('');
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
 
   const handleCreatePlaylist = async () => {
     const { errorMsg, data } = await callApi({
@@ -99,21 +100,22 @@ function Home() {
 
     getToken();
 
-  }, [userid]);
+    async function getPlaylists() {
+      const { errorMsg, data } = await callApi({
+        method: 'GET',
+        path: `playlists/by-user/${userid}`
+      });
+      if (errorMsg) {
+        console.error(errorMsg);
+      } else {
+        console.log(data);
+        setPlaylists(data);
+      }
+    }
 
-  // placeholder data
-  const playlists = [
-    {
-      id: 1,
-      title: 'Playlist 1',
-      imageUrl: 'playlist1.jpg',
-    },
-    {
-      id: 2,
-      title: 'Playlist 2',
-      imageUrl: 'playlist2.jpg',
-    },
-  ];
+    getPlaylists();
+
+  }, [userid]);
 
   return (
     <main>
@@ -133,15 +135,12 @@ function Home() {
               <AddIcon />
             </CreatePlaylistButton>
           </ListHeader>
-          <Box>
-            {playlists.map(playlist => (
-              <PlaylistItem
-                key={playlist.id}
-                title={playlist.title}
-                imageUrl={playlist.imageUrl}
-              />
-            ))}
-          </Box>
+          {playlists.map(playlist => (
+            <PlaylistItem
+              key={playlist.id}
+              title={playlist.title}
+            />
+          ))}
         </YourLibraryPaper>
 
         {token &&

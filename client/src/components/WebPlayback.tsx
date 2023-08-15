@@ -146,7 +146,6 @@ function WebPlayback({ token }: Props) {
         setActive(false);
 
         player.getCurrentState().then(state => {
-          console.log(state);
           (state?.paused) ? setActive(false) : setActive(true);
         });
 

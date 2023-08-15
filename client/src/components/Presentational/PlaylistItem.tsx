@@ -1,4 +1,4 @@
-import { Card, CardContent, Typography } from '@mui/material';
+import { Card, CardContent, Typography, Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 const PlaylistCard = styled(Card)({
@@ -6,11 +6,12 @@ const PlaylistCard = styled(Card)({
   alignItems: 'center',
   marginBottom: '20px',
   cursor: 'pointer',
+  backgroundColor: '#616161',
+  color: 'white'
 });
 
 type Props = {
   title: string,
-  imageUrl: string,
 }
 
 function PlaylistItem({ title }: Props) {

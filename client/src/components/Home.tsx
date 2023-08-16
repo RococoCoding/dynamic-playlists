@@ -1,25 +1,16 @@
 import { useEffect, useState } from 'react';
-import PlaylistItem from './Presentational/PlaylistItem';
+import ListItem from './presentational/ListItem';
 import WebPlayback from './WebPlayback';
-import { AppBar, Toolbar, Typography, Container, Box, Paper, Button } from '@mui/material';
+import { Typography, Container, Box, Paper, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import { useParams } from 'react-router-dom';
 import { SERVER_BASE_URL } from '../constants';
 import callApi from '../utils/callApi';
 import TextInput from './forms/textInput';
-import { Playlist } from '../types/index.js';
-import DisplayApiResponse from './Presentational/DisplayApiResponse';
-
-const Header = styled(AppBar)({
-  backgroundColor: '#1DB954',
-})
-
-const HeaderText = styled(Typography)({
-  fontWeight: 'bold',
-  textAlign: 'center',
-  flexGrow: 1
-});
+import { PlaylistType } from '../types/index.js';
+import DisplayApiResponse from './presentational/DisplayApiReponse';
+import Playlist from './presentational/Playlist';
 
 const MainContainer = styled(Container)({
   padding: '20px 0px 30px 0px'
@@ -55,11 +46,11 @@ const CreatePlaylistButton = styled(Button)({
 function Home() {
   const { userid } = useParams();
   const [token, setToken] = useState('');
-  const [dialogOpen, setDialogOpen] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
-  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist>();
+  const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistType>();
   const [apiError, setApiError] = useState('');
-  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [playlists, setPlaylists] = useState<PlaylistType[]>([]);
 
   const handleCreatePlaylist = async () => {
     const { errorMsg, data } = await callApi({
@@ -80,12 +71,21 @@ function Home() {
   };
 
   const openCreatePlaylistForm = () => {
-    setDialogOpen('create');
+    setDialogOpen(true);
   };
 
   const handleDialogClose = () => {
-    setDialogOpen('');
+    setDialogOpen(true);
   };
+
+  const setSelectedPlaylistById = (id: string) => {
+    const selectedPlaylist = playlists.find(list => list.id === id)
+    if (!selectedPlaylist) {
+      console.error(`Selected playlist id ${id} not found in playlists array.`);
+    } else {
+      setSelectedPlaylist(selectedPlaylist);
+    }
+  }
 
   useEffect(() => {
 
@@ -108,7 +108,6 @@ function Home() {
       if (errorMsg) {
         console.error(errorMsg);
       } else {
-        console.log(data);
         setPlaylists(data);
       }
     }
@@ -119,28 +118,32 @@ function Home() {
 
   return (
     <main>
-      <Header position="static">
-        <Toolbar>
-          <HeaderText variant="h6">
-            DYNAMIC PLAYLISTS
-          </HeaderText>
-        </Toolbar>
-      </Header>
-
       <MainContainer>
         <YourLibraryPaper>
-          <ListHeader>
-            <YourLibraryTitle>Your Library</YourLibraryTitle>
-            <CreatePlaylistButton variant="contained" onClick={openCreatePlaylistForm}>
-              <AddIcon />
-            </CreatePlaylistButton>
-          </ListHeader>
-          {playlists.map(playlist => (
-            <PlaylistItem
-              key={playlist.id}
-              title={playlist.title}
+          {!selectedPlaylist ?
+            <>
+              <ListHeader>
+                <YourLibraryTitle>Your Library</YourLibraryTitle>
+                <CreatePlaylistButton variant="contained" onClick={openCreatePlaylistForm}>
+                  <AddIcon />
+                </CreatePlaylistButton>
+              </ListHeader>
+              {playlists.map(playlist => {
+                const innerContent = <Typography variant="subtitle1" fontWeight="bold">{playlist.title}</Typography>;
+                return <ListItem
+                  key={playlist.id}
+                  id={playlist.id}
+                  innerContent={innerContent}
+                  onClick={setSelectedPlaylistById}
+                />
+              })}
+            </>
+            :
+            <Playlist
+              playlist={selectedPlaylist}
+              setApiError={setApiError}
             />
-          ))}
+          }
         </YourLibraryPaper>
 
         {token &&
@@ -150,27 +153,15 @@ function Home() {
         }
       </MainContainer>
       {
-        dialogOpen === 'create' &&
+        dialogOpen &&
         <TextInput
-          isDialogOpen={dialogOpen === 'create'}
+          isDialogOpen={dialogOpen}
           handleDialogClose={handleDialogClose}
           inputValue={newPlaylistTitle}
           inputLabel="Playlist Title"
           handleInputChange={(event) => setNewPlaylistTitle(event.target.value)}
           handleSubmit={handleCreatePlaylist}
           formTitle="Create New Playlist"
-        />
-      }
-      {
-        dialogOpen === 'edit' &&
-        <TextInput
-          isDialogOpen={dialogOpen === 'edit'}
-          handleDialogClose={handleDialogClose}
-          inputValue={newPlaylistTitle}
-          inputLabel="Playlist Title"
-          handleInputChange={(event) => setNewPlaylistTitle(event.target.value)}
-          handleSubmit={handleCreatePlaylist}
-          formTitle="Edit Playlist"
         />
       }
       {

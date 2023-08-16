@@ -14,9 +14,8 @@ const getPlaylistById = async (id: string): Promise<Playlist | null> => {
 
 const getPlaylistsByUserId = async (userId: string): Promise<Playlist[]> => {
   const { rows } = await pool.query(
-    `SELECT playlist.*, slot.*
+    `SELECT *
      FROM playlist
-     LEFT JOIN slot ON playlist.id = slot.playlist_id
      WHERE created_by = $1`,
     [userId]
   );

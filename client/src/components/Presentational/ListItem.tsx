@@ -35,16 +35,14 @@ function ListItem({
   onClick
 }: Props) {
   return (
-    <ListItemCard>
+    <ListItemCard onClick={() => onClick && onClick(id)}>
       <StyledCardContent>
         {icon &&
           <StyledIconBox>
             {icon}
           </StyledIconBox>
         }
-        <div onClick={() => onClick && onClick(id)}>
-          {innerContent}
-        </div>
+        {innerContent}
       </StyledCardContent>
     </ListItemCard>
   );

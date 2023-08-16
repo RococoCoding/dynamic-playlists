@@ -11,16 +11,6 @@ import TextInput from './forms/textInput';
 import { Playlist } from '../types/index.js';
 import DisplayApiResponse from './presentational/DisplayApiReponse';
 
-const Header = styled(AppBar)({
-  backgroundColor: '#1DB954',
-})
-
-const HeaderText = styled(Typography)({
-  fontWeight: 'bold',
-  textAlign: 'center',
-  flexGrow: 1
-});
-
 const MainContainer = styled(Container)({
   padding: '20px 0px 30px 0px'
 });
@@ -118,14 +108,6 @@ function Home() {
 
   return (
     <main>
-      <Header position="static">
-        <Toolbar>
-          <HeaderText variant="h6">
-            DYNAMIC PLAYLISTS
-          </HeaderText>
-        </Toolbar>
-      </Header>
-
       <MainContainer>
         <YourLibraryPaper>
           <ListHeader>

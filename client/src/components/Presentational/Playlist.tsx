@@ -7,9 +7,16 @@ import PersonIcon from '@mui/icons-material/Person'; // artist
 import AlbumIcon from '@mui/icons-material/Album'; // album
 import AudiotrackIcon from '@mui/icons-material/Audiotrack'; // track
 import QueueMusicIcon from '@mui/icons-material/QueueMusic'; // playlist
-import { requiresArtist } from '../../constants';
+import { SLOT_TYPES, requiresArtist } from '../../constants';
 import callApi from '../../utils/callApi';
 import { PlaylistType, Slot } from '../../types/index.js';
+
+const iconTypeMapping = {
+  [SLOT_TYPES.track]: <AudiotrackIcon />,
+  [SLOT_TYPES.album]: <AlbumIcon />,
+  [SLOT_TYPES.artist]: <PersonIcon />,
+  [SLOT_TYPES.playlist]: <QueueMusicIcon />,
+}
 
 const ListHeader = styled('div')({
   display: 'flex',
@@ -91,11 +98,11 @@ function Playlist({
       {slots.map(slot => {
         const innerContent = (
           <>
-            <Typography variant="subtitle1" fontWeight="bold">
+            <Typography variant="body2" fontWeight="bold">
               {slot.name}
             </Typography>
             {requiresArtist.includes(slot.type) && slot.artist_name?.length &&
-              <Typography variant="subtitle2" fontWeight="bold">
+              <Typography variant="caption">
                 {slot.artist_name.join(', ')}
               </Typography>}
           </>
@@ -104,6 +111,7 @@ function Playlist({
           <ListItem
             key={slot.id}
             id={slot.id}
+            icon={iconTypeMapping[slot.type]}
             innerContent={innerContent}
           />
         )

@@ -1,33 +1,51 @@
-import { Card, CardContent, Typography } from '@mui/material';
+import { Box, Card } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 const ListItemCard = styled(Card)({
   display: 'flex',
   alignItems: 'center',
-  marginBottom: '20px',
+  marginBottom: '5px',
   cursor: 'pointer',
   backgroundColor: '#616161',
-  color: 'white'
+  color: 'white',
+  height: '60px'
+});
+
+const StyledCardContent = styled('div')({
+  display: 'flex',
+  padding: '5px',
+});
+
+const StyledIconBox = styled(Box)({
+  width: '50px',
+  margin: 'auto'
 });
 
 type Props = {
   id: string;
-  innerContent?: JSX.Element;
+  icon?: JSX.Element;
+  innerContent: JSX.Element;
   onClick?: (id: string) => void;
 }
 
 function ListItem({
   id,
+  icon,
   innerContent,
   onClick
 }: Props) {
   return (
     <ListItemCard>
-      <CardContent>
-        <Typography onClick={() => onClick && onClick(id)} variant="subtitle1" fontWeight="bold">
+      <StyledCardContent>
+        {icon &&
+          <StyledIconBox>
+            {icon}
+          </StyledIconBox>
+        }
+        <div onClick={() => onClick && onClick(id)}>
           {innerContent}
-        </Typography>
-      </CardContent>
+        </div>
+      </StyledCardContent>
     </ListItemCard>
   );
 }

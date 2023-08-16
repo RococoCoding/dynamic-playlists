@@ -30,7 +30,6 @@ function App() {
       </Header>
       <Routes>
         <Route path="/home/:userid" element={<Home />} />
-        <Route path="/playlist/:userid/:playlistid" element={<Playlist />} />
         <Route path="/" element={<Landing />} />
       </Routes>
     </Router>

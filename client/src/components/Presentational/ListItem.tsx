@@ -11,14 +11,20 @@ const ListItemCard = styled(Card)({
 });
 
 type Props = {
+  id: string;
   innerContent?: JSX.Element;
+  onClick?: (id: string) => void;
 }
 
-function ListItem({ innerContent }: Props) {
+function ListItem({
+  id,
+  innerContent,
+  onClick
+}: Props) {
   return (
     <ListItemCard>
       <CardContent>
-        <Typography variant="subtitle1" fontWeight="bold">
+        <Typography onClick={() => onClick && onClick(id)} variant="subtitle1" fontWeight="bold">
           {innerContent}
         </Typography>
       </CardContent>

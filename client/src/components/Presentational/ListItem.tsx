@@ -1,7 +1,7 @@
-import { Card, CardContent, Typography, Box } from '@mui/material';
+import { Card, CardContent, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
-const PlaylistCard = styled(Card)({
+const ListItemCard = styled(Card)({
   display: 'flex',
   alignItems: 'center',
   marginBottom: '20px',
@@ -11,19 +11,19 @@ const PlaylistCard = styled(Card)({
 });
 
 type Props = {
-  title: string,
+  innerContent?: JSX.Element;
 }
 
-function PlaylistItem({ title }: Props) {
+function ListItem({ innerContent }: Props) {
   return (
-    <PlaylistCard>
+    <ListItemCard>
       <CardContent>
         <Typography variant="subtitle1" fontWeight="bold">
-          {title}
+          {innerContent}
         </Typography>
       </CardContent>
-    </PlaylistCard>
+    </ListItemCard>
   );
 }
 
-export default PlaylistItem;
+export default ListItem;

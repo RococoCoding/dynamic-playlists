@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import PlaylistItem from './Presentational/PlaylistItem';
+import ListItem from './presentational/ListItem';
 import WebPlayback from './WebPlayback';
 import { AppBar, Toolbar, Typography, Container, Box, Paper, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
@@ -9,7 +9,7 @@ import { SERVER_BASE_URL } from '../constants';
 import callApi from '../utils/callApi';
 import TextInput from './forms/textInput';
 import { Playlist } from '../types/index.js';
-import DisplayApiResponse from './Presentational/DisplayApiResponse';
+import DisplayApiResponse from './presentational/DisplayApiReponse';
 
 const Header = styled(AppBar)({
   backgroundColor: '#1DB954',
@@ -108,7 +108,6 @@ function Home() {
       if (errorMsg) {
         console.error(errorMsg);
       } else {
-        console.log(data);
         setPlaylists(data);
       }
     }
@@ -135,12 +134,13 @@ function Home() {
               <AddIcon />
             </CreatePlaylistButton>
           </ListHeader>
-          {playlists.map(playlist => (
-            <PlaylistItem
+          {playlists.map(playlist => {
+            const innerContent = <Typography variant="subtitle1" fontWeight="bold">{playlist.title}</Typography>;
+            return <ListItem
               key={playlist.id}
-              title={playlist.title}
+              innerContent={innerContent}
             />
-          ))}
+          })}
         </YourLibraryPaper>
 
         {token &&

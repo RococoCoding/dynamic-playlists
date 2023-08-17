@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import ListItem from './ListItem';
+import ListItem from './presentational/ListItem';
 import { Typography, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
@@ -7,9 +7,9 @@ import PersonIcon from '@mui/icons-material/Person'; // artist
 import AlbumIcon from '@mui/icons-material/Album'; // album
 import AudiotrackIcon from '@mui/icons-material/Audiotrack'; // track
 import QueueMusicIcon from '@mui/icons-material/QueueMusic'; // playlist
-import { SLOT_TYPES, requiresArtist } from '../../constants';
-import callApi from '../../utils/callApi';
-import { PlaylistType, Slot } from '../../types/index.js';
+import { SLOT_TYPES, requiresArtist } from '../constants';
+import callApi from '../utils/callApi';
+import { PlaylistType, Slot } from '../types/index.js';
 
 const iconTypeMapping = {
   [SLOT_TYPES.track]: <AudiotrackIcon />,

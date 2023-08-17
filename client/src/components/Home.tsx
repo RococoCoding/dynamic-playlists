@@ -10,7 +10,7 @@ import callApi from '../utils/callApi';
 import TextInput from './forms/textInput';
 import { PlaylistType } from '../types/index.js';
 import DisplayApiResponse from './presentational/DisplayApiReponse';
-import Playlist from './presentational/Playlist';
+import Playlist from './Playlist';
 
 const MainContainer = styled(Container)({
   padding: '20px 0px 30px 0px'

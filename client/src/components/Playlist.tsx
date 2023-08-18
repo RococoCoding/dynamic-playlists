@@ -3,19 +3,21 @@ import ListItem from './presentational/ListItem';
 import { Typography, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
-import PersonIcon from '@mui/icons-material/Person'; // artist
-import AlbumIcon from '@mui/icons-material/Album'; // album
-import AudiotrackIcon from '@mui/icons-material/Audiotrack'; // track
-import QueueMusicIcon from '@mui/icons-material/QueueMusic'; // playlist
-import { SLOT_TYPES, requiresArtist } from '../constants';
+import PersonIcon from '@mui/icons-material/Person';
+import AlbumIcon from '@mui/icons-material/Album';
+import AudiotrackIcon from '@mui/icons-material/Audiotrack';
+import QueueMusicIcon from '@mui/icons-material/QueueMusic';
+import { SLOT_TYPES_MAP, requiresArtist } from '../constants';
 import callApi from '../utils/callApi';
-import { PlaylistType, Slot } from '../types/index.js';
+import { BaseSlot, FullSlot, PlaylistType } from '../types/index.js';
+import BaseDialog from './forms/BaseDialog';
+import EditSlot from './forms/EditSlot';
 
 const iconTypeMapping = {
-  [SLOT_TYPES.track]: <AudiotrackIcon />,
-  [SLOT_TYPES.album]: <AlbumIcon />,
-  [SLOT_TYPES.artist]: <PersonIcon />,
-  [SLOT_TYPES.playlist]: <QueueMusicIcon />,
+  [SLOT_TYPES_MAP.track]: <AudiotrackIcon />,
+  [SLOT_TYPES_MAP.album]: <AlbumIcon />,
+  [SLOT_TYPES_MAP.artist]: <PersonIcon />,
+  [SLOT_TYPES_MAP.playlist]: <QueueMusicIcon />,
 }
 
 const ListHeader = styled('div')({
@@ -43,8 +45,9 @@ function Playlist({
   playlist,
   setApiError
 }: Props) {
-  const [slots, setSlots] = useState<Slot[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [slots, setSlots] = useState<FullSlot[]>([]);
+  const [openEditSlotDialog, setOpenEditSlotDialog] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<BaseSlot | FullSlot>();
 
   const handleCreateSlot = async () => {
     const { errorMsg, data } = await callApi({
@@ -62,12 +65,19 @@ function Playlist({
   };
 
   const openCreateSlotForm = () => {
-    setDialogOpen(true);
+    setOpenEditSlotDialog(true);
   };
 
   const handleDialogClose = () => {
-    setDialogOpen(false);
+    setOpenEditSlotDialog(false);
   };
+
+  const handleEditSlotSubmit = () => {
+  }
+
+  const EditSlotDialogContent = (
+    <EditSlot existingSlot={selectedSlot} />
+  )
 
   useEffect(() => {
 
@@ -116,6 +126,16 @@ function Playlist({
           />
         )
       })
+      }
+      {
+        openEditSlotDialog &&
+        <BaseDialog
+          dialogContent={EditSlotDialogContent}
+          handleDialogClose={handleDialogClose}
+          handleSubmit={handleEditSlotSubmit}
+          isDialogOpen={openEditSlotDialog}
+          submitDisabled={false} // TODO: add validation
+        />
       }
     </>
   );

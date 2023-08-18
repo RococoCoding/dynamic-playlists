@@ -12,13 +12,17 @@ export interface PlaylistType {
   title: string;
 }
 
-export interface Slot {
+export interface FullSlot extends BaseSlot {
   id: string;
   created_at: Date;
   last_updated?: Date;
-  name: string; 
-  artist_name?: string[];
   playlist_id: string;
   pool_id?: string;
+}
+
+export interface BaseSlot {
+  name: string; 
+  artist_name?: string[];
   type: number;
+  position: number;
 }

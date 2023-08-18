@@ -7,10 +7,11 @@ import AddIcon from '@mui/icons-material/Add';
 import { useParams } from 'react-router-dom';
 import { SERVER_BASE_URL } from '../constants';
 import callApi from '../utils/callApi';
-import TextInput from './forms/textInput';
+import TextInput from './forms/TextInput';
 import { PlaylistType } from '../types/index.js';
 import DisplayApiResponse from './presentational/DisplayApiReponse';
 import Playlist from './Playlist';
+import BaseDialog from './forms/BaseDialog';
 
 const MainContainer = styled(Container)({
   padding: '20px 0px 30px 0px'
@@ -46,7 +47,7 @@ const CreatePlaylistButton = styled(Button)({
 function Home() {
   const { userid } = useParams();
   const [token, setToken] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [openCreatePlaylist, setOpenCreatePlaylist] = useState(false);
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
   const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistType>();
   const [apiError, setApiError] = useState('');
@@ -71,11 +72,11 @@ function Home() {
   };
 
   const openCreatePlaylistForm = () => {
-    setDialogOpen(true);
+    setOpenCreatePlaylist(true);
   };
 
   const handleDialogClose = () => {
-    setDialogOpen(true);
+    setOpenCreatePlaylist(false);
   };
 
   const setSelectedPlaylistById = (id: string) => {
@@ -86,6 +87,15 @@ function Home() {
       setSelectedPlaylist(selectedPlaylist);
     }
   }
+
+  const CreateNewPlaylist = (
+    <TextInput
+      inputValue={newPlaylistTitle}
+      inputLabel="Playlist Title"
+      handleInputChange={(event) => setNewPlaylistTitle(event.target.value)}
+      formTitle="Create New Playlist"
+    />
+  )
 
   useEffect(() => {
 
@@ -115,6 +125,7 @@ function Home() {
     getPlaylists();
 
   }, [userid]);
+
 
   return (
     <main>
@@ -153,15 +164,13 @@ function Home() {
         }
       </MainContainer>
       {
-        dialogOpen &&
-        <TextInput
-          isDialogOpen={dialogOpen}
+        openCreatePlaylist &&
+        <BaseDialog
+          dialogContent={CreateNewPlaylist}
           handleDialogClose={handleDialogClose}
-          inputValue={newPlaylistTitle}
-          inputLabel="Playlist Title"
-          handleInputChange={(event) => setNewPlaylistTitle(event.target.value)}
           handleSubmit={handleCreatePlaylist}
-          formTitle="Create New Playlist"
+          isDialogOpen={openCreatePlaylist}
+          submitDisabled={!newPlaylistTitle}
         />
       }
       {

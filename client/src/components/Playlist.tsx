@@ -7,17 +7,17 @@ import PersonIcon from '@mui/icons-material/Person';
 import AlbumIcon from '@mui/icons-material/Album';
 import AudiotrackIcon from '@mui/icons-material/Audiotrack';
 import QueueMusicIcon from '@mui/icons-material/QueueMusic';
-import { SLOT_TYPES_MAP, requiresArtist } from '../constants';
+import { SLOT_TYPES_MAP_BY_NAME, requiresArtist } from '../constants';
 import callApi from '../utils/callApi';
 import { BaseSlot, FullSlot, PlaylistType } from '../types/index.js';
 import BaseDialog from './forms/BaseDialog';
 import EditSlot from './forms/EditSlot';
 
 const iconTypeMapping = {
-  [SLOT_TYPES_MAP.track]: <AudiotrackIcon />,
-  [SLOT_TYPES_MAP.album]: <AlbumIcon />,
-  [SLOT_TYPES_MAP.artist]: <PersonIcon />,
-  [SLOT_TYPES_MAP.playlist]: <QueueMusicIcon />,
+  [SLOT_TYPES_MAP_BY_NAME.track]: <AudiotrackIcon />,
+  [SLOT_TYPES_MAP_BY_NAME.album]: <AlbumIcon />,
+  [SLOT_TYPES_MAP_BY_NAME.artist]: <PersonIcon />,
+  [SLOT_TYPES_MAP_BY_NAME.playlist]: <QueueMusicIcon />,
 }
 
 const ListHeader = styled('div')({

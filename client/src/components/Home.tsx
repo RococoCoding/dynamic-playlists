@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react';
 import ListItem from './presentational/ListItem';
 import WebPlayback from './WebPlayback';
-import { Typography, Container, Box, Paper, Button } from '@mui/material';
+import { Typography, Container, Box, Paper, Button, DialogTitle, DialogContent } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import { useParams } from 'react-router-dom';
 import { SERVER_BASE_URL } from '../constants';
 import callApi from '../utils/callApi';
-import TextInput from './forms/TextInput';
+import TextInput from './forms/inputs/TextInput';
 import { PlaylistType } from '../types/index.js';
 import DisplayApiResponse from './presentational/DisplayApiReponse';
 import Playlist from './Playlist';
 import BaseDialog from './forms/BaseDialog';
+import { useTokenContext } from '../contexts/token';
 
 const MainContainer = styled(Container)({
   padding: '20px 0px 30px 0px'
@@ -44,9 +45,18 @@ const CreatePlaylistButton = styled(Button)({
   marginBottom: '15px',
 });
 
+const StyledDialogTitle = styled(DialogTitle)({
+  backgroundColor: '#282c34',
+  color: 'white',
+});
+
+const StyledDialogContent = styled(DialogContent)({
+  backgroundColor: '#282c34',
+});
+
 function Home() {
   const { userid } = useParams();
-  const [token, setToken] = useState('');
+  const { token, setTokenContext } = useTokenContext();
   const [openCreatePlaylist, setOpenCreatePlaylist] = useState(false);
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
   const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistType>();
@@ -89,12 +99,16 @@ function Home() {
   }
 
   const CreateNewPlaylist = (
-    <TextInput
-      inputValue={newPlaylistTitle}
-      inputLabel="Playlist Title"
-      handleInputChange={(event) => setNewPlaylistTitle(event.target.value)}
-      formTitle="Create New Playlist"
-    />
+    <>
+      <StyledDialogTitle>Create New Playlist</StyledDialogTitle>
+      <StyledDialogContent>
+        <TextInput
+          inputValue={newPlaylistTitle}
+          inputLabel="Playlist Title"
+          handleInputChange={(event) => setNewPlaylistTitle(event.target.value)}
+        />
+      </StyledDialogContent>
+    </>
   )
 
   useEffect(() => {
@@ -105,7 +119,7 @@ function Home() {
       if (!json.access_token) {
         window.location.href = `${SERVER_BASE_URL}auth/login`
       }
-      setToken(json.access_token);
+      setTokenContext(json.access_token);
     }
 
     getToken();

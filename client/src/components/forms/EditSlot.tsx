@@ -3,10 +3,11 @@ import { BaseSlot, FullSlot } from "../../types";
 import styled from "@emotion/styled";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
-import { SLOT_TYPES, SLOT_TYPES_MAP } from "../../constants";
+import { SLOT_TYPES, SLOT_TYPES_MAP_BY_ID } from "../../constants";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import InputLabel from "@mui/material/InputLabel";
+import SpotifySearch from "./inputs/SpotifySearch";
 
 type Props = {
   existingSlot?: FullSlot | BaseSlot;
@@ -15,9 +16,11 @@ type Props = {
 function EditSlot({
   existingSlot,
 }: Props) {
-  // saving slotType as string because I didn't want to fight with the select input converting the values to strings
-  // just need to remember to convert to int when saving the slot
-  const [slotType, setSlotType] = useState(`${existingSlot?.type}` || '');
+  // set as string name here, but save as integer id when submitting
+  // - dropdown input converts to value to string
+  // - need string name for Spotify API call to set type in search
+  const [slotType, setSlotType] = useState(existingSlot?.type ? SLOT_TYPES_MAP_BY_ID[existingSlot.type] : '');
+  const [slot, setSlot] = useState(existingSlot || null);
   const StyledDialogTitle = styled(DialogTitle)({
     backgroundColor: '#282c34',
     color: 'white',
@@ -27,14 +30,14 @@ function EditSlot({
     backgroundColor: '#282c34',
   });
 
+
+
   return (
     <>
       <StyledDialogTitle>{existingSlot ? 'Edit Slot' : 'Create a new slot'}</StyledDialogTitle>
       <StyledDialogContent>
         <InputLabel>Slot Type</InputLabel>
         <Select
-          // autoFocus
-          // margin="dense"
           fullWidth
           sx={{
             input: {
@@ -47,12 +50,18 @@ function EditSlot({
           onChange={(event: SelectChangeEvent) => setSlotType(event.target.value)}
         >
           {SLOT_TYPES.map((slotType) => {
-            console.log(slotType)
             return (
-              <MenuItem key={slotType} value={SLOT_TYPES_MAP[slotType]}>{slotType}</MenuItem>
+              <MenuItem key={slotType} value={slotType}>{slotType}</MenuItem>
             )
           })}
         </Select>
+        {
+          slotType &&
+          <SpotifySearch
+            setSlot={setSlot}
+            slotType={slotType}
+          />
+        }
       </StyledDialogContent>
     </>
   )

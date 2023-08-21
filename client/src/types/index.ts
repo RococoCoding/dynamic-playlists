@@ -1,3 +1,5 @@
+import { SLOT_TYPES_MAP_BY_ID } from "../constants";
+
 export type User = {
   id: string;
 }
@@ -23,6 +25,6 @@ export interface FullSlot extends BaseSlot {
 export interface BaseSlot {
   name: string; 
   artist_name?: string[];
-  type: number;
+  type: keyof typeof SLOT_TYPES_MAP_BY_ID;
   position: number;
 }

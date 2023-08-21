@@ -4,6 +4,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { TokenContextProvider } from './contexts/token';
 
 const theme = createTheme({
   palette: {
@@ -25,7 +26,9 @@ const theme = createTheme({
 ReactDOM.render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
-      <App />
+      <TokenContextProvider>
+        <App />
+      </TokenContextProvider>
     </ThemeProvider>
   </React.StrictMode>
   , document.getElementById('root'));

@@ -11,9 +11,11 @@ type Props = {
 }
 
 const callSpotifyApi = async (props: Props): Promise<any> => {
+  const params = new URLSearchParams(props.data);
   return callApi({
     baseUrl: SPOTIFY_BASE_URL,
-    ...props 
+    ...props,
+    path: `${props.path}?${params.toString()}`,
   })
 };
 

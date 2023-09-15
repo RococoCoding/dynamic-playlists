@@ -22,12 +22,12 @@ const getSlotsByPlaylistId = async (playlistId: string): Promise<Slot[]> => {
 };
 
 const createSlot = async (slot: Omit<Slot, 'id'>): Promise<Slot> => {
-  const { type, name } = slot;
+  const { type, name, playlist_id, artist_name, position } = slot;
   const { rows } = await pool.query(
-    `INSERT INTO slot (type, name)
-     VALUES ($1, $2)
+    `INSERT INTO slot (type, name, playlist_id, artist_name, position)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING *`,
-    [type, name]
+    [type, name, playlist_id, artist_name, position]
   );
   return rows[0];
 };

@@ -1,24 +1,33 @@
 import { useEffect, useState } from 'react';
-import { Autocomplete, TextField } from '@mui/material';
-import { FullSlot, BaseSlot } from '../../../types';
+import { Autocomplete, Box, TextField } from '@mui/material';
+import { SearchResultOption, SpotifyEntry } from '../../../types';
 import callSpotifyApi from '../../../utils/callSpotifyApi';
 import { useTokenContext } from '../../../contexts/token';
-import { SLOT_TYPE_TO_SPOTIFY_RETURN_TYPE } from '../../../constants';
+import { SLOT_TYPES_MAP_BY_NAME, SLOT_TYPE_TO_SPOTIFY_RETURN_TYPE } from '../../../constants';
+import { requiresArtist } from '../../../utils';
 
 type Props = {
-  setSlot: (slot: FullSlot | BaseSlot) => void;
-  slotType: string;
+  selectedOption: SearchResultOption | null;
+  setSelectedOption: (option: SearchResultOption | null) => void;
+  setSelectedEntry: (entry: SpotifyEntry | null) => void;
+  slotType: keyof typeof SLOT_TYPES_MAP_BY_NAME;
 }
 
-function SearchInput({ setSlot, slotType }: Props) {
+function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slotType }: Props) {
   const { token } = useTokenContext();
-  const [results, setResults] = useState<any[]>([]);
-  const [options, setOptions] = useState<string[]>([]);
+  const [spotifyEntries, setSpotifyEntries] = useState<any[]>([]);
+  const [options, setOptions] = useState<SearchResultOption[]>([]);
   const [textInputValue, setTextInputValue] = useState<string>('');
-
-  const handleSelect = (value: string | null) => {
-    console.log('selected', value);
-    // setSlot(value);
+  const handleSelect = (option: SearchResultOption | undefined) => {
+    if (option) {
+      setSelectedOption(option);
+      const selectedEntry = spotifyEntries.find((entry) => entry.id === option.value);
+      if (selectedEntry) {
+        setSelectedEntry(selectedEntry);
+      } else {
+        console.error('No entry found for selected d: ', option);
+      }
+    }
   }
 
 
@@ -40,8 +49,19 @@ function SearchInput({ setSlot, slotType }: Props) {
               console.error(errorMsg);
             } else {
               const { [SLOT_TYPE_TO_SPOTIFY_RETURN_TYPE[slotType]]: { items } } = data || {};
-              setResults(items);
-              setOptions(items.map((item: any) => item.name));
+              setSpotifyEntries(items);
+              setOptions(items.map((item: any) => {
+                let album = item.album;
+                if (slotType === 'album') {
+                  album = item;
+                }
+                return {
+                  label: `${item.name}${requiresArtist(slotType) ? ` - ${item.artists[0].name}` : ''}`,
+                  altText: `Cover art for album ${album?.name}`,
+                  imageUrl: album?.images[0]?.url,
+                  value: item.id
+                }
+              }));
             }
           } else {
             console.error('No token provided');
@@ -52,21 +72,37 @@ function SearchInput({ setSlot, slotType }: Props) {
       }, 800)
       return () => clearTimeout(delayDebounceFn)
     }
-  }, [textInputValue]);
+  }, [slotType, textInputValue, token]);
 
   return (
     <Autocomplete
       options={options}
+      renderOption={(muiOption) => {
+        // @ts-expect-error confirmed typing inaccuracy and 'key' exists as a property of muiOption
+        const { imageUrl, label, altText } = options.find((opt) => opt.label === muiOption.key) || {};
+        return <Box
+          {...muiOption}
+          key={muiOption.id}
+          style={{ fontSize: '0.7rem' }}
+          component="li"
+        >
+          {imageUrl &&
+            <img src={imageUrl} alt={altText} style={{ paddingRight: '5px', width: '30px', height: '30px' }} />
+          }
+          {label}
+        </Box>
+      }}
       renderInput={(params) => (
         <TextField
           {...params}
           label="Search"
           variant="outlined"
           onChange={(e) => setTextInputValue(e.target.value)}
-          value={textInputValue}
+          value={selectedOption?.label || textInputValue}
         />
       )}
-      onChange={(event, value) => handleSelect(value)}
+      onChange={(event, value) => value && handleSelect(value)}
+      value={selectedOption}
     />
   );
 }

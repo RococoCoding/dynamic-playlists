@@ -1,26 +1,33 @@
-import { useState } from "react";
-import { BaseSlot, FullSlot } from "../../types";
+import { SearchResultOption, SpotifyEntry } from "../../types";
 import styled from "@emotion/styled";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
-import { SLOT_TYPES, SLOT_TYPES_MAP_BY_ID } from "../../constants";
+import { SLOT_TYPES, SLOT_TYPES_MAP_BY_NAME } from "../../constants";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import InputLabel from "@mui/material/InputLabel";
 import SpotifySearch from "./inputs/SpotifySearch";
 
 type Props = {
-  existingSlot?: FullSlot | BaseSlot;
+  selectedOption: SearchResultOption | null;
+  setSelectedOption: (option: SearchResultOption | null) => void;
+  setSelectedEntry: (entry: SpotifyEntry | null) => void;
+  slotType: keyof typeof SLOT_TYPES_MAP_BY_NAME;
+  setSlotType: (slotType: keyof typeof SLOT_TYPES_MAP_BY_NAME) => void;
+  createMode?: boolean;
 }
 
 function EditSlot({
-  existingSlot,
+  createMode = false,
+  selectedOption,
+  setSelectedOption,
+  setSelectedEntry,
+  slotType,
+  setSlotType,
 }: Props) {
   // set as string name here, but save as integer id when submitting
   // - dropdown input converts to value to string
   // - need string name for Spotify API call to set type in search
-  const [slotType, setSlotType] = useState(existingSlot?.type ? SLOT_TYPES_MAP_BY_ID[existingSlot.type] : '');
-  const [slot, setSlot] = useState(existingSlot || null);
   const StyledDialogTitle = styled(DialogTitle)({
     backgroundColor: '#282c34',
     color: 'white',
@@ -30,11 +37,14 @@ function EditSlot({
     backgroundColor: '#282c34',
   });
 
-
+  const handleSelect = (value: string) => {
+    setSlotType(value)
+    setSelectedEntry(null);
+  }
 
   return (
     <>
-      <StyledDialogTitle>{existingSlot ? 'Edit Slot' : 'Create a new slot'}</StyledDialogTitle>
+      <StyledDialogTitle>{createMode ? 'Edit Slot' : 'Create a new slot'}</StyledDialogTitle>
       <StyledDialogContent>
         <InputLabel>Slot Type</InputLabel>
         <Select
@@ -45,9 +55,10 @@ function EditSlot({
               backgroundColor: 'black'
             },
           }}
+          style={{ marginBottom: '5px' }}
           color='primary'
           value={slotType}
-          onChange={(event: SelectChangeEvent) => setSlotType(event.target.value)}
+          onChange={(event: SelectChangeEvent) => handleSelect(event.target.value)}
         >
           {SLOT_TYPES.map((slotType) => {
             return (
@@ -58,7 +69,9 @@ function EditSlot({
         {
           slotType &&
           <SpotifySearch
-            setSlot={setSlot}
+            selectedOption={selectedOption}
+            setSelectedOption={setSelectedOption}
+            setSelectedEntry={setSelectedEntry}
             slotType={slotType}
           />
         }

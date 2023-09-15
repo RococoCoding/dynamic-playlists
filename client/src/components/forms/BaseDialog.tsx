@@ -1,10 +1,11 @@
 import { Dialog, DialogActions, Button, styled } from "@mui/material";
 type Props = {
   dialogContent: JSX.Element,
-  submitDisabled: boolean,
-  isDialogOpen: boolean,
+  fullWidth?: boolean,
   handleDialogClose: () => void,
   handleSubmit: () => void,
+  isDialogOpen: boolean,
+  submitDisabled: boolean,
 }
 
 const StyledDialogActions = styled(DialogActions)({
@@ -17,13 +18,14 @@ const CancelButton = styled(Button)({
 
 function BaseDialog({
   dialogContent,
-  submitDisabled,
+  fullWidth = false,
   handleDialogClose,
   handleSubmit,
   isDialogOpen,
+  submitDisabled,
 }: Props) {
   return (
-    <Dialog open={isDialogOpen} onClose={handleDialogClose}>
+    <Dialog fullWidth={fullWidth} open={isDialogOpen} onClose={handleDialogClose}>
       {dialogContent}
       <StyledDialogActions>
         <CancelButton onClick={handleDialogClose}>Cancel</CancelButton>

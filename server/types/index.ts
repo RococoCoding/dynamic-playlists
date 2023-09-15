@@ -28,6 +28,8 @@ export interface Slot {
   playlist_id: UUID;
   pool_id?: UUID;
   type: SlotType;
+  artist_name: string[];
+  position: number;
 }
 
 export interface PoolTrack {

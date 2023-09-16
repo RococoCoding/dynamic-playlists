@@ -24,13 +24,15 @@ slotsRouter.get('/by-playlist/:playlistId', async (req, res) => {
 });
 
 slotsRouter.post('/', async (req, res) => {
-  const slot = await createSlot(req.body);
-  res.json(slot);
+  const { spotify_id, ...slot } = req.body;
+  const newSlot = await createSlot(slot, spotify_id);
+  res.json(newSlot);
 });
 
 slotsRouter.put('/:id', async (req, res) => {
-  const slot = await updateSlot(req.params.id, req.body);
-  if (slot) {
+  const { spotify_id, ...slot } = req.body;
+  const newSlot = await updateSlot(req.params.id, spotify_id, slot);
+  if (newSlot) {
     res.json(slot);
   } else {
     res.status(404).send('Slot not found');

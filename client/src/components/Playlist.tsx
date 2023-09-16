@@ -3,6 +3,7 @@ import ListItem from './presentational/ListItem';
 import { Typography, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
 import PersonIcon from '@mui/icons-material/Person';
 import AlbumIcon from '@mui/icons-material/Album';
 import AudiotrackIcon from '@mui/icons-material/Audiotrack';
@@ -37,6 +38,14 @@ const CreateSlotButton = styled(Button)({
   marginBottom: '15px',
 });
 
+const SlotInnerContent = styled('div')({
+  display: 'flex',
+  flexGrow: '1',
+  '@media (max-width:600px)': {
+    width: '87%',
+  },
+});
+
 type Props = {
   playlist: PlaylistType;
   setApiError: (error: string) => void;
@@ -61,6 +70,20 @@ function Playlist({
     setOpenEditSlotDialog(false);
   };
 
+  const selectSlotToEdit = (id: string) => {
+    const slot = slots.find((slot) => slot.id === id);
+    if (slot) {
+      const option = {
+        label: `${slot.name}${slot.artist_name ? ` - ${slot.artist_name[0]}` : ''}`,
+        value: slot.pool_spotify_id,
+      }
+      setSelectedSlot(slot);
+      setSelectedOption(option);
+      setSlotType(slot?.type ? SLOT_TYPES_MAP_BY_ID[slot.type] : '');
+      setOpenEditSlotDialog(true);
+    }
+  }
+
   const handleEditSlotSubmit = async () => {
     if (selectedEntry) {
       const newSlot: BaseSlot = {
@@ -74,16 +97,19 @@ function Playlist({
         newSlot.artist_name = [selectedEntry.owner.display_name];
       }
       const { errorMsg, data } = await callApi({
-        method: 'POST',
-        path: 'slots',
+        method: selectedSlot ? 'PUT' : 'POST',
+        // @ts-expect-error
+        path: selectedSlot ? `slots/${selectedSlot.id}` : 'slots',
         data: {
           ...newSlot,
           playlist_id: playlist.id,
+          spotify_id: selectedEntry.id,
         }
       });
       if (errorMsg) {
         setApiError(errorMsg);
       } else {
+        // TODO: if editing a slot, update the slot instead of adding a new one
         setSlots([...slots, data]);
       }
       handleDialogClose();
@@ -94,6 +120,7 @@ function Playlist({
     <EditSlot
       createMode={!selectedSlot}
       slotType={slotType}
+      selectedSlot={selectedSlot}
       selectedOption={selectedOption}
       setSlotType={setSlotType}
       setSelectedEntry={setSelectedEntry}
@@ -128,16 +155,16 @@ function Playlist({
         </CreateSlotButton>
       </ListHeader>
       {slots.map(slot => {
+        const label = slot.name + (requiresArtist(slot.type) && slot.artist_name?.length ? ' - ' + slot.artist_name.join(', ') : '')
         const innerContent = (
-          <>
-            <Typography variant="body2" fontWeight="bold" style={{ marginRight: '5px' }}>
-              {slot.name}
-            </Typography>
-            {requiresArtist(slot.type) && slot.artist_name?.length &&
-              <Typography variant="caption">
-                {slot.artist_name.join(', ')}
-              </Typography>}
-          </>
+          <SlotInnerContent>
+            <div className="scroll-container" style={{ marginLeft: '10px', display: 'flex', alignItems: 'center', width: '80%', flexGrow: '1' }}>
+              <div className={label.length > 24 ? "scroll-content" : ""} style={{ fontSize: '1rem' }}>
+                {label}
+              </div>
+            </div>
+            <EditIcon style={{ marginRight: '5px' }} onClick={() => selectSlotToEdit(slot.id)} />
+          </SlotInnerContent>
         );
         return (
           <ListItem
@@ -158,6 +185,7 @@ function Playlist({
           isDialogOpen={openEditSlotDialog}
           submitDisabled={false} // TODO: add validation
           fullWidth={true}
+          submitText={selectedSlot ? 'Edit' : 'Create'}
         />
       }
     </>

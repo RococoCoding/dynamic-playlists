@@ -1,11 +1,13 @@
 import { pool } from '../../index.js';
 import { Slot } from '../../types/index.js';
+import { createPool } from '../pool/index.js';
 
 const getSlotById = async (id: string): Promise<Slot | null> => {
   const { rows } = await pool.query(
-    `SELECT *
+    `SELECT slot.*, pool.last_updated AS pool_last_updated, pool.id AS pool_id, pool.spotify_id AS pool_spotify_id
      FROM slot
-     WHERE id = $1`,
+     JOIN pool ON slot.pool_id = pool.id
+     WHERE slot.id = $1`,
     [id]
   );
   return rows.length > 0 ? rows[0] : null;
@@ -13,35 +15,40 @@ const getSlotById = async (id: string): Promise<Slot | null> => {
 
 const getSlotsByPlaylistId = async (playlistId: string): Promise<Slot[]> => {
   const { rows } = await pool.query(
-    `SELECT *
+    `SELECT slot.*, pool.last_updated AS pool_last_updated, pool.id AS pool_id, pool.spotify_id AS pool_spotify_id
      FROM slot
-     WHERE playlist_id = $1`,
+     LEFT JOIN pool ON slot.pool_id = pool.id
+     WHERE slot.playlist_id = $1`,
     [playlistId]
   );
   return rows;
 };
 
-const createSlot = async (slot: Omit<Slot, 'id'>): Promise<Slot> => {
+const createSlot = async (slot: Omit<Slot, 'id'>, spotify_id: string): Promise<Slot> => {
   const { type, name, playlist_id, artist_name, position } = slot;
+  // TODO: transactions
+  const { id: pool_id } = await createPool({ spotify_id });
   const { rows } = await pool.query(
-    `INSERT INTO slot (type, name, playlist_id, artist_name, position)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO slot (type, name, playlist_id, artist_name, position, pool_id)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
-    [type, name, playlist_id, artist_name, position]
+    [type, name, playlist_id, artist_name, position, pool_id]
   );
   return rows[0];
 };
 
-const updateSlot = async (id: string, slot: Partial<Omit<Slot, 'id' | 'created_at' | 'created_by'>>): Promise<Slot | null> => {
-  const { type, name, pool_id } = slot;
+const updateSlot = async (id: string, slot: Partial<Omit<Slot, 'id' | 'created_at' | 'created_by'>>, spotify_id: string): Promise<Slot | null> => {
+  const { type, name, artist_name } = slot;
+  const { id: pool_id } = await createPool({ spotify_id });
   const { rows } = await pool.query(
     `UPDATE slot
-     SET title = COALESCE($1, type),
-         spotify_id = COALESCE($2, name),
-         pool_id = COALESCE($3, pool_id),
-     WHERE id = $4
+     SET type = COALESCE($1, type),
+         name = COALESCE($2, name),
+         artist_name = COALESCE($3, artist_name),
+         pool_id = COALESCE($4, pool_id)
+     WHERE id = $5
      RETURNING *`,
-    [type, name, pool_id, id]
+    [type, name, artist_name, pool_id, id]
   );
   return rows.length > 0 ? rows[0] : null;
 };

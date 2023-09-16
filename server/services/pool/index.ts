@@ -19,12 +19,14 @@ const getPoolBySpotifyId = async (spotifyId: string, market: string): Promise<Po
 };
 
 const createPool = async (pool: Omit<Pool, 'id' | 'last_updated'>): Promise<Pool> => {
-  const { spotify_id, market } = pool;
+  const { spotify_id } = pool;
   const { rows } = await connectionPool.query(
-    `INSERT INTO pool (spotify_id, market, last_updated)
-    VALUES ($1, $2, NOW())
+    `INSERT INTO pool (spotify_id, last_updated)
+    VALUES ($1, NOW())
+    ON CONFLICT (spotify_id)
+    DO NOTHING
     RETURNING *`,
-    [spotify_id, market]
+    [spotify_id]
   );
   return rows[0];
 };

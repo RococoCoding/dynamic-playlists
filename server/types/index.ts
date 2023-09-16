@@ -15,7 +15,6 @@ export type Pool = {
   id: UUID;
   last_updated: Date;
   spotify_id: string;
-  market: string;
 }
 
 export type SlotType = typeof VALID_SLOT_TYPES[number];

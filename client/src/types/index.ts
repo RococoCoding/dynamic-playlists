@@ -19,6 +19,8 @@ export interface FullSlot extends BaseSlot {
   created_at: Date;
   last_updated?: Date;
   pool_id?: string;
+  pool_spotify_id: string;
+  pool_last_updated: Date;
   playlist_id: string;
 }
 
@@ -60,7 +62,7 @@ export type SpotifyEntry = SpotifyArtistType | SpotifyAlbumType | SpotifyPlaylis
 
 export type SearchResultOption = {
   label: string;
-  imageUrl: string;
+  imageUrl?: string;
   value: string;
-  altText: string;
+  altText?: string;
 }

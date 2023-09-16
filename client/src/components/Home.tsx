@@ -145,6 +145,7 @@ function Home() {
     <main>
       <MainContainer>
         <YourLibraryPaper>
+          <div style={{ paddingBottom: '20%' }}>
           {!selectedPlaylist ?
             <>
               <ListHeader>
@@ -169,13 +170,14 @@ function Home() {
               setApiError={setApiError}
             />
           }
+          </div>
+          {token &&
+            <WebPlaybackContainer>
+              <WebPlayback token={token} />
+            </WebPlaybackContainer>
+          }
         </YourLibraryPaper>
 
-        {token &&
-          <WebPlaybackContainer>
-            <WebPlayback token={token} />
-          </WebPlaybackContainer>
-        }
       </MainContainer>
       {
         openCreatePlaylist &&

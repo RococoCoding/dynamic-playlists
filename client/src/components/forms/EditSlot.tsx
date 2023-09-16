@@ -1,4 +1,4 @@
-import { SearchResultOption, SpotifyEntry } from "../../types";
+import { BaseSlot, FullSlot, SearchResultOption, SpotifyEntry } from "../../types";
 import styled from "@emotion/styled";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -9,6 +9,7 @@ import InputLabel from "@mui/material/InputLabel";
 import SpotifySearch from "./inputs/SpotifySearch";
 
 type Props = {
+  selectedSlot?: BaseSlot | FullSlot;
   selectedOption: SearchResultOption | null;
   setSelectedOption: (option: SearchResultOption | null) => void;
   setSelectedEntry: (entry: SpotifyEntry | null) => void;

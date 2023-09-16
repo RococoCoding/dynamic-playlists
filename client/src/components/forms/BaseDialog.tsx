@@ -6,6 +6,7 @@ type Props = {
   handleSubmit: () => void,
   isDialogOpen: boolean,
   submitDisabled: boolean,
+  submitText?: string,
 }
 
 const StyledDialogActions = styled(DialogActions)({
@@ -23,13 +24,14 @@ function BaseDialog({
   handleSubmit,
   isDialogOpen,
   submitDisabled,
+  submitText = 'Create',
 }: Props) {
   return (
     <Dialog fullWidth={fullWidth} open={isDialogOpen} onClose={handleDialogClose}>
       {dialogContent}
       <StyledDialogActions>
         <CancelButton onClick={handleDialogClose}>Cancel</CancelButton>
-        <Button onClick={handleSubmit} disabled={submitDisabled}>Create</Button>
+        <Button onClick={handleSubmit} disabled={submitDisabled}>{submitText}</Button>
       </StyledDialogActions>
     </Dialog>
   )

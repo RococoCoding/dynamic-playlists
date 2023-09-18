@@ -13,7 +13,6 @@ const redirect_uri = SPOTIFY_REDIRECT_URI;
 const accessTokenMap = new Map();
 
 authRouter.get('/login', (req, res) => {
-  console.log('login start');
   const scope = "streaming user-read-email user-modify-playback-state user-read-private playlist-modify-public";
 
   const state = generateRandomString(16);
@@ -32,7 +31,6 @@ authRouter.get('/login', (req, res) => {
 });
 
 authRouter.get('/callback', (req, res) => {
-  console.log('callback start');
   const code = req.query.code;
 
   const authOptions = {

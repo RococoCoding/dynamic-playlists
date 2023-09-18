@@ -15,7 +15,6 @@ export type Pool = {
   id: UUID;
   last_updated: Date;
   spotify_id: string;
-  market: string;
 }
 
 export type SlotType = typeof VALID_SLOT_TYPES[number];
@@ -28,6 +27,8 @@ export interface Slot {
   playlist_id: UUID;
   pool_id?: UUID;
   type: SlotType;
+  artist_name: string[];
+  position: number;
 }
 
 export interface PoolTrack {

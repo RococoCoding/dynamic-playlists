@@ -164,7 +164,7 @@ function WebPlayback({ token }: Props) {
               {/* @ts-expect-error */}
               <TrackImage component="img" image={currentTrack.album.images[0].url} alt="Album cover thumbnail" />
               <TrackInfo>
-                <div className="scroll-container">
+                <div className="scroll-container" style={{ flexGrow: '1' }}>
                   <div className={currentTrack.name.length > 22 ? "scroll-content" : ""}>
                     <TrackTitle variant="subtitle1">{currentTrack.name || 'No track selected'}</TrackTitle>
                   </div>

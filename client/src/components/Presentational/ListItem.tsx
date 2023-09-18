@@ -8,17 +8,17 @@ const ListItemCard = styled(Card)({
   cursor: 'pointer',
   backgroundColor: '#616161',
   color: 'white',
-  height: '60px'
+  height: '60px',
 });
 
 const StyledCardContent = styled('div')({
+  width: '100%',
   display: 'flex',
   padding: '5px',
 });
 
 const StyledIconBox = styled(Box)({
-  width: '50px',
-  margin: 'auto'
+  marginLeft: '5px'
 });
 
 type Props = {
@@ -36,7 +36,7 @@ function ListItem({
 }: Props) {
   return (
     <ListItemCard onClick={() => onClick && onClick(id)}>
-      <StyledCardContent>
+      <StyledCardContent style={{ flexGrow: '1' }}>
         {icon &&
           <StyledIconBox>
             {icon}

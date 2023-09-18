@@ -20,6 +20,15 @@ const getPoolBySpotifyId = async (spotifyId: string, market: string): Promise<Po
 
 const createPool = async (pool: Omit<Pool, 'id' | 'last_updated'>): Promise<Pool> => {
   const { spotify_id } = pool;
+  const { rows: poolRows } = await connectionPool.query(
+    `SELECT *
+     FROM pool
+     WHERE spotify_id = $1`,
+    [spotify_id]
+  );
+  if (poolRows[0]) {
+    return poolRows[0];
+  }
   const { rows } = await connectionPool.query(
     `INSERT INTO pool (spotify_id, last_updated)
     VALUES ($1, NOW())

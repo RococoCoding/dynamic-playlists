@@ -31,9 +31,9 @@ slotsRouter.post('/', async (req, res) => {
 
 slotsRouter.put('/:id', async (req, res) => {
   const { spotify_id, ...slot } = req.body;
-  const newSlot = await updateSlot(req.params.id, spotify_id, slot);
+  const newSlot = await updateSlot(req.params.id, slot, spotify_id);
   if (newSlot) {
-    res.json(slot);
+    res.json(newSlot);
   } else {
     res.status(404).send('Slot not found');
   }

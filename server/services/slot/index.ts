@@ -38,19 +38,20 @@ const createSlot = async (slot: Omit<Slot, 'id'>, spotify_id: string): Promise<S
 };
 
 const updateSlot = async (id: string, slot: Partial<Omit<Slot, 'id' | 'created_at' | 'created_by'>>, spotify_id: string): Promise<Slot | null> => {
-  const { type, name, artist_name } = slot;
+  const { type, name, artist_name, position } = slot;
   const { id: pool_id } = await createPool({ spotify_id });
   const { rows } = await pool.query(
     `UPDATE slot
      SET type = COALESCE($1, type),
          name = COALESCE($2, name),
          artist_name = COALESCE($3, artist_name),
-         pool_id = COALESCE($4, pool_id)
-     WHERE id = $5
-     RETURNING *`,
-    [type, name, artist_name, pool_id, id]
+         pool_id = COALESCE($4, pool_id),
+         position = COALESCE($5, position)
+     WHERE id = $6
+     RETURNING *;`,
+    [type, name, artist_name, pool_id, position, id]
   );
-  return rows.length > 0 ? rows[0] : null;
+  return rows.length > 0 ? {...rows[0], id } : null;
 };
 
 const deleteSlot = async (id: string): Promise<void> => {

@@ -58,9 +58,10 @@ function Playlist({
   const [slots, setSlots] = useState<FullSlot[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<SpotifyEntry | null>(null);
   const [openEditSlotDialog, setOpenEditSlotDialog] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<BaseSlot | FullSlot>();
+  const [selectedSlot, setSelectedSlot] = useState<FullSlot>();
   const [selectedOption, setSelectedOption] = useState<SearchResultOption | null>(null);
   const [slotType, setSlotType] = useState(selectedSlot?.type ? SLOT_TYPES_MAP_BY_ID[selectedSlot.type] : '');
+  const editMode = !!selectedSlot;
 
   const openCreateSlotForm = () => {
     setOpenEditSlotDialog(true);
@@ -69,6 +70,12 @@ function Playlist({
   const handleDialogClose = () => {
     setOpenEditSlotDialog(false);
   };
+
+  const clearState = () => {
+    setSelectedSlot(undefined);
+    setSelectedEntry(null);
+    setSelectedOption(null);
+  }
 
   const selectSlotToEdit = (id: string) => {
     const slot = slots.find((slot) => slot.id === id);
@@ -89,17 +96,19 @@ function Playlist({
       const newSlot: BaseSlot = {
         name: selectedEntry.name,
         type: SLOT_TYPES_MAP_BY_NAME[slotType],
-        position: 0,
+        position: slots.length,
       }
       if ('artists' in selectedEntry) {
         newSlot.artist_name = selectedEntry.artists.map((artist) => artist.name);
       } else if ('owner' in selectedEntry) {
         newSlot.artist_name = [selectedEntry.owner.display_name];
       }
-      const { errorMsg, data } = await callApi({
-        method: selectedSlot ? 'PUT' : 'POST',
-        // @ts-expect-error
-        path: selectedSlot ? `slots/${selectedSlot.id}` : 'slots',
+      if (editMode) {
+        newSlot.position = selectedSlot.position;
+      }
+      const { errorMsg, data: returnedSlot } = await callApi({
+        method: editMode ? 'PUT' : 'POST',
+        path: editMode ? `slots/${selectedSlot.id}` : 'slots',
         data: {
           ...newSlot,
           playlist_id: playlist.id,
@@ -109,8 +118,14 @@ function Playlist({
       if (errorMsg) {
         setApiError(errorMsg);
       } else {
-        // TODO: if editing a slot, update the slot instead of adding a new one
-        setSlots([...slots, data]);
+        const newSlots = [...slots];
+        if (editMode) {
+          newSlots.splice(returnedSlot.position, 1, returnedSlot);
+        } else {
+          newSlots.push(returnedSlot);
+        }
+        setSlots(newSlots);
+        clearState();
       }
       handleDialogClose();
     }
@@ -138,7 +153,7 @@ function Playlist({
       if (errorMsg) {
         console.error(errorMsg);
       } else {
-        setSlots(data);
+        setSlots(data.sort(({ position }: FullSlot, { position: position2 }: FullSlot) => position - position2));
       }
     }
 

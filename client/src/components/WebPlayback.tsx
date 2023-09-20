@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import callSpotifyApi from '../utils/callSpotifyApi';
 import { Button, Card, CardContent, CardMedia, Typography } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import { styled } from '@mui/material/styles';
+import useSpotifyApi from '../utils/useSpotifyApi';
 
 const PlayerCard = styled(Card)({
   display: 'flex',
@@ -83,6 +83,7 @@ function WebPlayback({ token }: Props) {
   const [isActive, setActive] = useState<null | boolean>();
   const [player, setPlayer] = useState<undefined | Spotify.Player>(undefined);
   const [currentTrack, setTrack] = useState(track);
+  const { callSpotifyApi } = useSpotifyApi();
 
   useEffect(() => {
     const script = document.createElement("script");

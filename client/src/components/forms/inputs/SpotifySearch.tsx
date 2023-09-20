@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Autocomplete, Box, TextField } from '@mui/material';
 import { SearchResultOption, SpotifyEntry } from '../../../types';
-import callSpotifyApi from '../../../utils/callSpotifyApi';
 import { useTokenContext } from '../../../contexts/token';
 import { SLOT_TYPES_MAP_BY_NAME, SLOT_TYPE_TO_SPOTIFY_RETURN_TYPE } from '../../../constants';
 import { requiresArtist } from '../../../utils';
+import useSpotifyApi from '../../../utils/useSpotifyApi';
 
 type Props = {
   selectedOption: SearchResultOption | null;
@@ -14,6 +14,7 @@ type Props = {
 }
 
 function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slotType }: Props) {
+  const { callSpotifyApi } = useSpotifyApi();
   const { token } = useTokenContext();
   const [spotifyEntries, setSpotifyEntries] = useState<any[]>([]);
   const [options, setOptions] = useState<SearchResultOption[]>([]);
@@ -72,7 +73,7 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
       }, 800)
       return () => clearTimeout(delayDebounceFn)
     }
-  }, [slotType, textInputValue, token]);
+  }, [callSpotifyApi, slotType, textInputValue, token]);
 
   return (
     <Autocomplete

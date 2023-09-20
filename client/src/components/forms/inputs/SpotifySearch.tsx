@@ -15,7 +15,7 @@ type Props = {
 
 function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slotType }: Props) {
   const { callSpotifyApi } = useSpotifyApi();
-  const { token } = useTokenContext();
+  const { currToken } = useTokenContext();
   const [spotifyEntries, setSpotifyEntries] = useState<any[]>([]);
   const [options, setOptions] = useState<SearchResultOption[]>([]);
   const [textInputValue, setTextInputValue] = useState<string>('');
@@ -36,7 +36,7 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
     if (textInputValue) {
       const delayDebounceFn = setTimeout(async () => {
         async function searchSpotify() {
-          if (token) {
+          if (currToken) {
             const { errorMsg, data } = await callSpotifyApi({
               method: 'GET',
               path: 'search',
@@ -44,7 +44,7 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
                 q: textInputValue,
                 type: slotType
               },
-              token,
+              token: currToken,
             });
             if (errorMsg) {
               console.error(errorMsg);
@@ -65,7 +65,7 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
               }));
             }
           } else {
-            console.error('No token provided');
+            console.error('No currToken provided');
           }
         }
 
@@ -73,7 +73,7 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
       }, 800)
       return () => clearTimeout(delayDebounceFn)
     }
-  }, [callSpotifyApi, slotType, textInputValue, token]);
+  }, [callSpotifyApi, slotType, textInputValue, currToken]);
 
   return (
     <Autocomplete

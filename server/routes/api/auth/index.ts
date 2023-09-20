@@ -80,7 +80,7 @@ authRouter.get('/callback', (req, res) => {
 });
 
 authRouter.post('/token/:id/refresh', async (req, res) => {
-  const { user_id } = req.query;
+  const { id: user_id } = req.query;
   console.log('Starting refresh token flow for user', user_id);
   if (user_id && typeof user_id === 'string') {
     // get hashed refresh token from db

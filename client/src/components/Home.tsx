@@ -57,7 +57,7 @@ const StyledDialogContent = styled(DialogContent)({
 
 function Home() {
   const { userid } = useParams();
-  const { token, setTokenContext } = useTokenContext();
+  const { currToken, setTokenContext } = useTokenContext();
   const [openCreatePlaylist, setOpenCreatePlaylist] = useState(false);
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
   const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistType>();
@@ -140,7 +140,7 @@ function Home() {
       getToken();
       getPlaylists();
     }
-  }, [setTokenContext, setUserIdContext, userid]);
+  }, []);
 
 
   return (
@@ -173,9 +173,9 @@ function Home() {
             />
           }
           </div>
-          {token &&
+          {currToken &&
             <WebPlaybackContainer>
-              <WebPlayback token={token} />
+              <WebPlayback />
             </WebPlaybackContainer>
           }
         </YourLibraryPaper>

@@ -7,19 +7,23 @@ interface Props {
 }
 
 interface TokenContextInterface {
-  token: string,
+  currToken: string,
+  prevToken: string,
   setTokenContext: (newToken: string) => void,
 }
 
 export const TokenContext = createContext({});
 
 export const TokenContextProvider = ({ children }: Props) => {
-  const [token, setToken] = useState<string>('');
+  const [currToken, setCurrToken] = useState<string>('');
+  const [prevToken, setPrevToken] = useState<string>('');
   const setTokenContext = (newToken: string) => {
-    setToken(newToken);
+    setPrevToken(currToken);
+    setCurrToken(newToken);
   };
   const tokenContext: TokenContextInterface = {
-    token,
+    currToken,
+    prevToken,
     setTokenContext,
   };
 

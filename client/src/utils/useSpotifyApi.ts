@@ -13,8 +13,6 @@ const useSpotifyApi = () => {
   const { refreshToken } = useRefreshToken();
   const callSpotifyApi = async (props: Props): Promise<any> => {
     const params = new URLSearchParams(props.data);
-    console.log('callSpotifyApi', { props, params })
-    
     let res = await callApi({
       baseUrl: SPOTIFY_BASE_URL,
       ...props,
@@ -50,7 +48,7 @@ const useSpotifyApi = () => {
           path: `${props.path}?${params.toString()}`,
         })
     }
-    return {};
+    return res;
   };
 
   return { callSpotifyApi };

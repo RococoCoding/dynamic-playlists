@@ -114,8 +114,8 @@ authRouter.post('/token/:id/refresh', async (req, res) => {
             accessTokenMap.set(user_id, body.access_token);
             res.json({access_token: body.access_token});
           } else {
-            console.log(error);
-            throw error;
+            console.error('Unable to retrieve new access token: ', response.statusCode, error);
+            res.status(401).json({ error: 'Invalid refresh token' });
           }
         });
       }

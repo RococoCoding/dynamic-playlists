@@ -56,11 +56,11 @@ const updatePlaylist = async (id: string, playlist: Partial<Omit<Playlist, 'id' 
   try {
     await pool.query(
       `INSERT INTO playlist_editor (playlist_id, editor_id)
-       VALUES ($1, $2)`,
+       VALUES ($1, $2)
+       ON CONFLICT DO NOTHING`,
       [playlistRow.id, last_updated_by]
     );
   } catch (e) {
-    // TODO: ignore if unique constraint error, but pass on other errors
     console.log('Error updating playlist_editor: ', e);
   }
   return playlistRow;

@@ -5,7 +5,6 @@ import Home from './components/Home';
 import Landing from './components/Landing';
 import styled from '@emotion/styled';
 import { AppBar, Typography, Toolbar } from '@mui/material';
-import Playlist from './components/Playlist';
 
 function App() {
 

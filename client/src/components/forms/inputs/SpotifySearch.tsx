@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Autocomplete, Box, TextField } from '@mui/material';
 import { SearchResultOption, SpotifyEntry } from '../../../types';
-import callSpotifyApi from '../../../utils/callSpotifyApi';
 import { useTokenContext } from '../../../contexts/token';
 import { SLOT_TYPES_MAP_BY_NAME, SLOT_TYPE_TO_SPOTIFY_RETURN_TYPE } from '../../../constants';
 import { requiresArtist } from '../../../utils';
+import useSpotifyApi from '../../../utils/useSpotifyApi';
 
 type Props = {
   selectedOption: SearchResultOption | null;
@@ -14,7 +14,8 @@ type Props = {
 }
 
 function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slotType }: Props) {
-  const { token } = useTokenContext();
+  const { callSpotifyApi } = useSpotifyApi();
+  const { currToken } = useTokenContext();
   const [spotifyEntries, setSpotifyEntries] = useState<any[]>([]);
   const [options, setOptions] = useState<SearchResultOption[]>([]);
   const [textInputValue, setTextInputValue] = useState<string>('');
@@ -35,7 +36,7 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
     if (textInputValue) {
       const delayDebounceFn = setTimeout(async () => {
         async function searchSpotify() {
-          if (token) {
+          if (currToken) {
             const { errorMsg, data } = await callSpotifyApi({
               method: 'GET',
               path: 'search',
@@ -43,7 +44,7 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
                 q: textInputValue,
                 type: slotType
               },
-              token,
+              token: currToken,
             });
             if (errorMsg) {
               console.error(errorMsg);
@@ -64,7 +65,7 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
               }));
             }
           } else {
-            console.error('No token provided');
+            console.error('No currToken provided');
           }
         }
 
@@ -72,7 +73,7 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
       }, 800)
       return () => clearTimeout(delayDebounceFn)
     }
-  }, [slotType, textInputValue, token]);
+  }, [callSpotifyApi, slotType, textInputValue, currToken]);
 
   return (
     <Autocomplete

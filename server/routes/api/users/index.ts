@@ -19,6 +19,7 @@ usersRouter.get('/:id', async (req: Request, res: Response) => {
     return res.status(200).send(user);
   } catch (err: any) {
     const errMsg = err?.message || err;
+    console.error('Error creating user with id ', id, ': ', errMsg);
     return res.status(500).json({ error: errMsg});
   }
 });
@@ -32,6 +33,7 @@ usersRouter.delete('/:id', async (req: Request, res: Response) => {
     return res.status(200).send('User deleted');
   } catch (err: any) {
     const errMsg = err?.message || err;
+    console.error('Error deleting user with id ', id, ': ', errMsg);
     return res.status(500).json({ error: errMsg});
   }
 });

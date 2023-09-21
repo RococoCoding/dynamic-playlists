@@ -13,6 +13,7 @@ import DisplayApiResponse from './presentational/DisplayApiReponse';
 import Playlist from './Playlist';
 import BaseDialog from './forms/BaseDialog';
 import { useTokenContext } from '../contexts/token';
+import { useUserContext } from '../contexts/user';
 
 const MainContainer = styled(Container)({
   padding: '20px 0px 30px 0px'
@@ -56,12 +57,13 @@ const StyledDialogContent = styled(DialogContent)({
 
 function Home() {
   const { userid } = useParams();
-  const { token, setTokenContext } = useTokenContext();
+  const { currToken, setTokenContext } = useTokenContext();
   const [openCreatePlaylist, setOpenCreatePlaylist] = useState(false);
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
   const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistType>();
   const [apiError, setApiError] = useState('');
   const [playlists, setPlaylists] = useState<PlaylistType[]>([]);
+  const { setUserIdContext } = useUserContext();
 
   const handleCreatePlaylist = async () => {
     const { errorMsg, data } = await callApi({
@@ -112,7 +114,6 @@ function Home() {
   )
 
   useEffect(() => {
-
     async function getToken() {
       const response = await fetch(`${SERVER_BASE_URL}auth/token/${userid}`);
       const json = await response.json();
@@ -120,10 +121,8 @@ function Home() {
         window.location.href = `${SERVER_BASE_URL}auth/login`
       }
       setTokenContext(json.access_token);
+      localStorage.setItem('refresh_token', json.refresh_token);
     }
-
-    getToken();
-
     async function getPlaylists() {
       const { errorMsg, data } = await callApi({
         method: 'GET',
@@ -136,9 +135,12 @@ function Home() {
       }
     }
 
-    getPlaylists();
-
-  }, [userid]);
+    if (userid) {
+      setUserIdContext(userid);
+      getToken();
+      getPlaylists();
+    }
+  }, []);
 
 
   return (
@@ -171,9 +173,9 @@ function Home() {
             />
           }
           </div>
-          {token &&
+          {currToken &&
             <WebPlaybackContainer>
-              <WebPlayback token={token} />
+              <WebPlayback />
             </WebPlaybackContainer>
           }
         </YourLibraryPaper>

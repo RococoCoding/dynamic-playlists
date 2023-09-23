@@ -35,6 +35,6 @@ export interface PoolTrack {
   id: UUID;
   pool_id: UUID;
   spotify_track_id: string;
-  spotify_artist_id: string;
+  spotify_artist_ids?: Array<string>; // For future feature of banning artists
 }
 

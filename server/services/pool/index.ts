@@ -30,8 +30,8 @@ const createPool = async (pool: Omit<Pool, 'id' | 'last_updated'>): Promise<Pool
     return poolRows[0];
   }
   const { rows } = await connectionPool.query(
-    `INSERT INTO pool (spotify_id, last_updated)
-    VALUES ($1, NOW())
+    `INSERT INTO pool (spotify_id)
+    VALUES ($1)
     ON CONFLICT (spotify_id)
     DO NOTHING
     RETURNING *`,

@@ -70,11 +70,12 @@ poolTracksRouter.get('/by-spotify-artist-id/:spotifyArtistId', async (req: Reque
 });
 
 // Insert pool tracks
-poolTracksRouter.post('/', async (req: Request, res: Response) => {
+poolTracksRouter.post('/by-pool/:poolId', async (req: Request, res: Response) => {
   const poolTracks: Omit<PoolTrack, 'id'>[] = req.body;
+  const { poolId } = req.params;
 
   try {
-    await insertPoolTracks(poolTracks);
+    await insertPoolTracks(poolTracks, poolId);
     return res.status(201).send('Pool tracks inserted');
   } catch (err: any) {
     const errMsg = err?.message || err;

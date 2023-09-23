@@ -8,15 +8,18 @@ const useRefreshToken = () => {
   const { userId } = useUserContext();
 
   const refreshToken = async (): Promise<string | undefined> => { 
-    const res = await callApi({
+    const { errorMsg, access_token } = await callApi({
       baseUrl: SERVER_BASE_URL,
       path: `auth/token/${userId}/refresh`,
       method: 'POST',
     });
-    console.log('refresh token res', res);
-    if (res.access_token) {
-      setTokenContext(res.access_token);
-      return res.access_token;
+    if (errorMsg) {
+      console.log(errorMsg);
+      return;
+    }
+    if (access_token) {
+      setTokenContext(access_token);
+      return access_token;
     }
   };
   return { refreshToken };

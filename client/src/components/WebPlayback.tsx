@@ -103,7 +103,6 @@ function WebPlayback() {
           getOAuthToken: cb => { cb(currToken); },
           volume: 0.5
         });
-
         setPlayer(player);
 
         player.addListener('ready', async ({ device_id }) => {
@@ -173,7 +172,7 @@ function WebPlayback() {
         <PlayerCard id="web-playback">
           {currentTrack && 
             <TrackInfoContainer>
-              {/* @ts-expect-error */}
+              {/* @ts-expect-error component might not be showing because of style wrapper, but it's needed */}
               <TrackImage component="img" image={currentTrack.album.images[0].url} alt="Album cover thumbnail" />
               <TrackInfo>
                 <div className="scroll-container" style={{ flexGrow: '1' }}>

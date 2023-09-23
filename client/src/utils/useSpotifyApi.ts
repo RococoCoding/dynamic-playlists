@@ -1,4 +1,5 @@
 import { SPOTIFY_BASE_URL } from "../constants";
+import { useTokenContext } from "../contexts/token";
 import callApi from "./callApi";
 import useRefreshToken from "./refreshToken";
 
@@ -8,15 +9,22 @@ type Props = {
   path: string;
   data?: any;
   token?: string;
+  dataAsQueryParams?: boolean;
 }
 const useSpotifyApi = () => {
   const { refreshToken } = useRefreshToken();
+  const { currToken } = useTokenContext();
   const callSpotifyApi = async (props: Props): Promise<any> => {
-    const params = new URLSearchParams(props.data);
+    let path = props.path;
+    if (props.dataAsQueryParams) {
+      const params = new URLSearchParams(props.data);
+      path = `${path}?${params.toString()}`;
+    }
     let res = await callApi({
       baseUrl: SPOTIFY_BASE_URL,
+      token: currToken,
       ...props,
-      path: `${props.path}?${params.toString()}`,
+      path,
     })
     if (res.errorMsg && res.errorMsg.includes('expired')) {
       // TODO: implement PKCE auth flow
@@ -45,7 +53,7 @@ const useSpotifyApi = () => {
           baseUrl: SPOTIFY_BASE_URL,
           ...props,
           token: newToken,
-          path: `${props.path}?${params.toString()}`,
+          path,
         })
     }
     return res;

@@ -10,7 +10,7 @@ const apiRouter = Router();
 apiRouter.use("/users", usersRouter);
 apiRouter.use("/playlists", playlistsRouter);
 apiRouter.use("/pools", poolsRouter);
-apiRouter.use("/poolTracks", poolTracksRouter);
+apiRouter.use("/pool-tracks", poolTracksRouter);
 apiRouter.use("/slots", slotsRouter);
 
 

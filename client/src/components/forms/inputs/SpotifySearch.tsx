@@ -45,6 +45,7 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
                 type: slotType
               },
               token: currToken,
+              dataAsQueryParams: true,
             });
             if (errorMsg) {
               console.error(errorMsg);

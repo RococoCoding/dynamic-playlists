@@ -1,5 +1,16 @@
 Dynamic Playlists (Under Development)
 
+Major TODOS before release:
+- Publish a playlist to spotify (🔨🚧🏗️)
+- Update playlist with new tracks during listening through DP app
+- Scrolling for longer playlists
+- Support drag n drop for slot positioning
+- Delete slots
+- Spotify attributions & branding guidelines
+- Global snackbar to handle API error messages
+- Testing
+- Refactor pools
+
 A Spotify web player where you can design dynamic playlists that autorefresh with new songs as you listen.
 In a dynamic playlist you can add tracks, which behave normally, or slots, which will rotate between songs from a selection of songs as you listen. Slots can be populated with artists, albums, or playlists. (Support for recommendations is planned but will not be in the initial release.)
 

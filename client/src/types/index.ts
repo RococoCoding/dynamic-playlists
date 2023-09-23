@@ -7,20 +7,20 @@ export type User = {
 export interface PlaylistType {
   id: string;
   spotify_id?: string;
-  created_at: Date;
+  created_at: string;
   created_by: string;
-  last_updated: Date;
+  last_updated: string;
   last_updated_by: string;
   title: string;
 }
 
 export interface FullSlot extends BaseSlot {
   id: string;
-  created_at: Date;
-  last_updated?: Date;
+  created_at: string;
+  last_updated?: string;
   pool_id?: string;
   pool_spotify_id: string;
-  pool_last_updated: Date;
+  pool_last_updated: string;
   playlist_id: string;
 }
 
@@ -65,4 +65,11 @@ export type SearchResultOption = {
   imageUrl?: string;
   value: string;
   altText?: string;
+}
+
+export type PoolTrack = {
+  id: string;
+  pool_id: string;
+  spotify_track_id: string;
+  spotify_artist_ids?: Array<string>;
 }

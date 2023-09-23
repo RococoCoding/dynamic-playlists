@@ -80,7 +80,7 @@ authRouter.get('/callback', (req, res) => {
 });
 
 authRouter.post('/token/:id/refresh', async (req, res) => {
-  const { id: user_id } = req.query;
+  const { id: user_id } = req.params;
   console.log('Starting refresh token flow for user', user_id);
   if (user_id && typeof user_id === 'string') {
     // get hashed refresh token from db
@@ -88,37 +88,30 @@ authRouter.post('/token/:id/refresh', async (req, res) => {
     if (!hashedRefreshToken) {
       res.status(401).json({ error: 'No refresh token found for user' });
     } else {
-      // Compare the provided refresh token with the hashed token from your database
-      const isMatch = await bcrypt.compare(hashedRefreshToken, hashedRefreshToken);
-      if (!isMatch) {
-        console.error('Unable to decrypt refresh token');
-        res.status(401).json({ error: 'Invalid refresh token' });
-      } else {
-        // Decrypt refresh token & retrieve new access token
-        const decryptedRefreshToken = await bcrypt.hash(hashedRefreshToken, 10);
-        const authOptions = {
-          url: 'https://accounts.spotify.com/api/token',
-          form: {
-            refresh_token: decryptedRefreshToken,
-            grant_type: 'refresh_token'
-          },
-          headers: {
-            'Authorization': 'Basic ' + (Buffer.from(spotify_client_id + ':' + spotify_client_secret).toString('base64')),
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          json: true
-        };
-        console.log('requesting new access token')
-        request.post(authOptions, async function (error, response, body) {
-          if (response.statusCode === 200) {
-            accessTokenMap.set(user_id, body.access_token);
-            res.json({access_token: body.access_token});
-          } else {
-            console.error('Unable to retrieve new access token: ', response.statusCode, error);
-            res.status(401).json({ error: 'Invalid refresh token' });
-          }
-        });
-      }
+      // Decrypt refresh token & retrieve new access token
+      const decryptedRefreshToken = await bcrypt.hash(hashedRefreshToken, 10);
+      const authOptions = {
+        url: 'https://accounts.spotify.com/api/token',
+        form: {
+          refresh_token: decryptedRefreshToken,
+          grant_type: 'refresh_token'
+        },
+        headers: {
+          'Authorization': 'Basic ' + (Buffer.from(spotify_client_id + ':' + spotify_client_secret).toString('base64')),
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        json: true
+      };
+      console.log('requesting new access token')
+      request.post(authOptions, async function (error, response, body) {
+        if (response.statusCode === 200) {
+          accessTokenMap.set(user_id, body.access_token);
+          res.json({access_token: body.access_token});
+        } else {
+          console.error('Unable to retrieve new access token: ', response.statusCode, error);
+          res.status(401).json({ error: 'Invalid refresh token' });
+        }
+      });
     }
   } else {
     res.status(400).json({ error: 'Missing refresh token or user ID' });

@@ -55,12 +55,33 @@ const StyledDialogContent = styled(DialogContent)({
   backgroundColor: '#282c34',
 });
 
+const sortPlaylistsByLastUpdated = (playlists: PlaylistType[]) => {
+  // sort playlists by last updated, newest first. If no last updated, sort by created at
+  return playlists.sort((a, b) => {
+    const aLastUpdated = new Date(a.last_updated);
+    const bLastUpdated = new Date(b.last_updated);
+    const aCreatedAt = new Date(a.created_at);
+    const bCreatedAt = new Date(b.created_at);
+    if (bLastUpdated === null && aLastUpdated === null) {
+      return bCreatedAt.getTime() - aCreatedAt.getTime();
+    } else if (bLastUpdated === null) {
+      return -1;
+    } else if (aLastUpdated === null) {
+      return 1;
+    } else if (bLastUpdated.getTime() === aLastUpdated.getTime()) {
+      return bCreatedAt.getTime() - aCreatedAt.getTime();
+    }
+    return bLastUpdated.getTime() - aLastUpdated.getTime();
+  });
+}
+
 function Home() {
   const { userid } = useParams();
   const { currToken, setTokenContext } = useTokenContext();
   const [openCreatePlaylist, setOpenCreatePlaylist] = useState(false);
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
   const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistType>();
+  // TODO: move error handling to context for global snackbar?
   const [apiError, setApiError] = useState('');
   const [playlists, setPlaylists] = useState<PlaylistType[]>([]);
   const { setUserIdContext } = useUserContext();
@@ -131,7 +152,8 @@ function Home() {
       if (errorMsg) {
         console.error(errorMsg);
       } else {
-        setPlaylists(data);
+        const sorted = sortPlaylistsByLastUpdated(data);
+        setPlaylists(sorted);
       }
     }
 

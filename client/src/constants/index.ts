@@ -6,7 +6,7 @@ export const SLOT_TYPES_MAP_BY_ID = {
   1: 'track',
   2: 'artist',
   3: 'album',
-  4: 'playlist',
+  // 4: 'playlist',
 }
 
 export const SLOT_TYPES_MAP_BY_NAME: Record<string, keyof typeof SLOT_TYPES_MAP_BY_ID> = Object.entries(SLOT_TYPES_MAP_BY_ID)
@@ -19,7 +19,7 @@ export const SLOT_TYPE_TO_SPOTIFY_RETURN_TYPE = {
   [SLOT_TYPES_MAP_BY_ID[1]]: 'tracks',
   [SLOT_TYPES_MAP_BY_ID[2]]: 'artists',
   [SLOT_TYPES_MAP_BY_ID[3]]: 'albums',
-  [SLOT_TYPES_MAP_BY_ID[4]]: 'playlists',
+  // [SLOT_TYPES_MAP_BY_ID[4]]: 'playlists',
 }
 
 export type SlotType = typeof SLOT_TYPES_MAP_BY_ID[keyof typeof SLOT_TYPES_MAP_BY_ID];

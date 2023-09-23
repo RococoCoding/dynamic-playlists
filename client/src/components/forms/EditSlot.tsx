@@ -45,7 +45,7 @@ function EditSlot({
 
   return (
     <>
-      <StyledDialogTitle>{createMode ? 'Edit Slot' : 'Create a new slot'}</StyledDialogTitle>
+      <StyledDialogTitle>{createMode ? 'Create a new slot' : 'Edit Slot'}</StyledDialogTitle>
       <StyledDialogContent>
         <InputLabel>Slot Type</InputLabel>
         <Select

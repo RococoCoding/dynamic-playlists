@@ -158,29 +158,12 @@ function WebPlayback() {
             setTrack(state.track_window.current_track);
             setActive(false);
 
-            player.getCurrentState().then(async (state) => {
-              console.log('player state changed', state);
-              if (!state) {
-                return;
-              }
-              const { context: { uri }, paused } = state;
-              // check if current playlist is a dp playlist
-              if (uri && uri.includes('playlist')) {
-                const playlistId = uri.split(':')[2];
-                if (!activePlaylist || activePlaylist !== playlistId) {
-                  const { data } = await callApi({
-                    method: 'GET',
-                    path: `playlists/by-spotify-id/${playlistId}`
-                  });
-                  if (!data.length) {
-                    setActivePlaylist(null);
-                  }
-                }
-              }
-              (paused) ? setActive(false) : setActive(true);
+            player.getCurrentState().then(state => {
+              (state?.paused) ? setActive(false) : setActive(true);
             });
 
           }));
+
           player.connect();
         };
       }

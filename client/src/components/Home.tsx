@@ -5,15 +5,14 @@ import { Typography, Container, Box, Paper, Button, DialogTitle, DialogContent }
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import { useParams } from 'react-router-dom';
-import { SERVER_BASE_URL } from '../constants';
 import callApi from '../utils/callApi';
 import TextInput from './forms/inputs/TextInput';
 import { PlaylistType } from '../types/index.js';
 import DisplayApiResponse from './presentational/DisplayApiReponse';
 import Playlist from './Playlist';
 import BaseDialog from './forms/BaseDialog';
-import { useTokenContext } from '../contexts/token';
 import { useUserContext } from '../contexts/user';
+import { getToken } from '../utils';
 
 const MainContainer = styled(Container)({
   padding: '20px 0px 30px 0px'
@@ -76,8 +75,8 @@ const sortPlaylistsByLastUpdated = (playlists: PlaylistType[]) => {
 }
 
 function Home() {
-  const { userid } = useParams();
-  const { currToken, setTokenContext } = useTokenContext();
+  const { userid: userId } = useParams();
+  const token = getToken();
   const [openCreatePlaylist, setOpenCreatePlaylist] = useState(false);
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
   const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistType>();
@@ -91,8 +90,8 @@ function Home() {
       method: 'POST',
       path: 'playlists',
       data: {
-        created_by: userid,
-        last_updated_by: userid,
+        created_by: userId,
+        last_updated_by: userId,
         title: newPlaylistTitle
       }
     });
@@ -135,19 +134,10 @@ function Home() {
   )
 
   useEffect(() => {
-    async function getToken() {
-      const response = await fetch(`${SERVER_BASE_URL}auth/token/${userid}`);
-      const json = await response.json();
-      if (!json.access_token) {
-        window.location.href = `${SERVER_BASE_URL}auth/login`
-      }
-      setTokenContext(json.access_token);
-      localStorage.setItem('refresh_token', json.refresh_token);
-    }
     async function getPlaylists() {
       const { errorMsg, data } = await callApi({
         method: 'GET',
-        path: `playlists/by-user/${userid}`
+        path: `playlists/by-user/${userId}`
       });
       if (errorMsg) {
         console.error(errorMsg);
@@ -157,9 +147,8 @@ function Home() {
       }
     }
 
-    if (userid) {
-      setUserIdContext(userid);
-      getToken();
+    if (userId) {
+      setUserIdContext(userId);
       getPlaylists();
     }
   }, []);
@@ -195,7 +184,7 @@ function Home() {
             />
           }
           </div>
-          {currToken &&
+          {token &&
             <WebPlaybackContainer>
               <WebPlayback />
             </WebPlaybackContainer>

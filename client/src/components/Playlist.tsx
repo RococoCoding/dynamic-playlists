@@ -17,7 +17,6 @@ import BaseDialog from './forms/BaseDialog';
 import EditSlot from './forms/EditSlot';
 import { requiresArtist } from '../utils';
 import useSpotifyApi from '../utils/useSpotifyApi';
-import { useTokenContext } from '../contexts/token';
 import { useUserContext } from '../contexts/user';
 
 const iconTypeMapping = {
@@ -78,7 +77,6 @@ function Playlist({
   const [selectedOption, setSelectedOption] = useState<SearchResultOption | null>(null);
   const [slotType, setSlotType] = useState(selectedSlot?.type ? SLOT_TYPES_MAP_BY_ID[selectedSlot.type] : '');
   const editMode = !!selectedSlot;
-  const { currToken } = useTokenContext();
   const { userId } = useUserContext();
   const { callSpotifyApi } = useSpotifyApi();
 
@@ -102,7 +100,6 @@ function Playlist({
     const input = {
       method: 'GET',
       path: `albums/${spotifyId}/tracks`,
-      token: currToken,
     }
     const { errorMsg, data } = await callSpotifyApi(input);
     if (!errorMsg && data) {
@@ -149,7 +146,6 @@ function Playlist({
       const { errorMsg, data } = await callSpotifyApi({
         method: 'POST',
         path: `users/${userId}/playlists`,
-        token: currToken,
         data: {
           name: playlist.title,
         }
@@ -180,7 +176,6 @@ function Playlist({
       const { errorMsg } = await callSpotifyApi({
         method: 'PUT',
         path: `playlists/${spotifyPlaylistId}/tracks`,
-        token: currToken,
         data: {
           uris: [],
         }
@@ -225,7 +220,6 @@ function Playlist({
           const { errorMsg, data } = await callSpotifyApi({
             method: 'GET',
             path: `artists/${pool_spotify_id}/albums`,
-            token: currToken,
           });
           if (errorMsg) {
             console.log('Error clearing playlist in Spotify', errorMsg);
@@ -276,7 +270,6 @@ function Playlist({
     const { errorMsg } = await callSpotifyApi({
       method: 'PUT',
       path: `playlists/${spotifyPlaylistId}/tracks`,
-      token: currToken,
       data: {
         uris: filteredUris,
       }

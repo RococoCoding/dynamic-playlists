@@ -1,10 +1,11 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
 import './App.css';
-import Home from './components/Home';
 import Landing from './components/Landing';
 import styled from '@emotion/styled';
 import { AppBar, Typography, Toolbar } from '@mui/material';
+import RequestToken from './components/RequestToken';
+import Home from './components/Home';
 
 function App() {
 
@@ -28,6 +29,7 @@ function App() {
         </Toolbar>
       </Header>
       <Routes>
+        <Route path="/auth/callback" element={<RequestToken />} />
         <Route path="/home/:userid" element={<Home />} />
         <Route path="/" element={<Landing />} />
       </Routes>

@@ -6,3 +6,18 @@ export const requiresArtist = (type: keyof typeof SLOT_TYPES_MAP_BY_ID | keyof t
   }
   return SLOT_TYPES_THAT_REQUIRE_ARTIST.includes(type);
 };  
+
+export const getToken = () => {
+  return localStorage.getItem('access_token');
+}
+
+export const setToken = (token: string) => {
+  if (!token || token === 'undefined') {
+    throw new Error(`Missing or invalid token: ${token}`)
+  }
+  localStorage.setItem('access_token', token);
+}
+
+export const tokenExists = (token?: string | null) => !!token && token !== 'undefined';
+
+export const getErrorMessage = (error: any) => error?.response?.data?.error?.message || error?.message;

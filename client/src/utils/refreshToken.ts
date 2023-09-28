@@ -1,27 +1,39 @@
-import { SERVER_BASE_URL } from "../constants";
-import { useTokenContext } from "../contexts/token";
-import { useUserContext } from "../contexts/user";
+import authorizeSpotify from "./authorizeSpotify";
 import callApi from "./callApi";
 
 const useRefreshToken = () => {
-  const { setTokenContext } = useTokenContext();
-  const { userId } = useUserContext();
+  const refreshToken = localStorage.getItem('refresh_token');
 
-  const refreshToken = async (): Promise<string | undefined> => { 
-    const { errorMsg, access_token } = await callApi({
-      baseUrl: SERVER_BASE_URL,
-      path: `auth/token/${userId}/refresh`,
+  const getNewToken = async (): Promise<string | null> => { 
+    const { errorMsg, data } = await callApi({
       method: 'POST',
+      baseUrl: 'https://accounts.spotify.com/api/',
+      path: 'token',
+      data: {
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: process.env.REACT_APP_SPOTIFY_CLIENT_ID,
+      },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
     });
     if (errorMsg) {
-      console.log(errorMsg);
-      return;
+      console.log('Failed to refresh token. Attempting to reauthorize.', errorMsg); 
+      authorizeSpotify();
+      return null;
     }
-    if (access_token) {
-      setTokenContext(access_token);
+    const { access_token, refresh_token } = data;
+    if (!access_token) {
+      throw new Error('Missing access token');
+    }
+    if (!refresh_token) {
+      throw new Error('Missing refresh token');
+    }
+      localStorage.setItem('refresh_token', refresh_token);
+      localStorage.setItem('access_token', access_token);
       return access_token;
-    }
   };
-  return { refreshToken };
+  return { getNewToken };
 };
 export default useRefreshToken;

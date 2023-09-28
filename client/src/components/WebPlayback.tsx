@@ -7,7 +7,8 @@ import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import { styled } from '@mui/material/styles';
 import useRefreshToken from '../utils/refreshToken';
 import useSpotifyApi from '../utils/useSpotifyApi';
-import { useTokenContext } from '../contexts/token';
+import callApi from '../utils/callApi';
+import { tokenExists } from '../utils';
 
 const PlayerCard = styled(Card)({
   display: 'flex',
@@ -85,8 +86,9 @@ function WebPlayback() {
   const [isActive, setActive] = useState<null | boolean>();
   const [player, setPlayer] = useState<undefined | Spotify.Player>(undefined);
   const [currentTrack, setTrack] = useState(track);
-  const { currToken, prevToken } = useTokenContext();
-  const { refreshToken } = useRefreshToken();
+  const [activePlaylist, setActivePlaylist] = useState<null | string>(null);
+  const [token, setToken] = useState<string | null | undefined>(localStorage.getItem('access_token')); 
+  const { getNewToken } = useRefreshToken();
   const { callSpotifyApi } = useSpotifyApi();
 
   useEffect(() => {
@@ -95,76 +97,96 @@ function WebPlayback() {
     script.async = true;
 
     document.body.appendChild(script);
-    const startPlayer = async () => {
-      window.onSpotifyWebPlaybackSDKReady = () => {
+    if (tokenExists(token)) {
+      const startPlayer = async () => {
+        window.onSpotifyWebPlaybackSDKReady = () => {
 
-        const player = new window.Spotify.Player({
-          name: 'Web Playback SDK',
-          getOAuthToken: cb => { cb(currToken); },
-          volume: 0.5
-        });
-        setPlayer(player);
-
-        player.addListener('ready', async ({ device_id }) => {
-          console.log('Ready with Device ID', device_id);
-          if (!device_id) {
-            throw new Error('Device ID is null');
-          }
-          await callSpotifyApi({
-            data: {
-              device_ids: [device_id],
-              play: false
-            },
-            method: "PUT",
-            path: "me/player",
-            token: currToken
+          const player = new window.Spotify.Player({
+            name: 'Web Playback SDK',
+            getOAuthToken: cb => { cb(token as string); },
+            volume: 0.5
           });
-        });
+          setPlayer(player);
 
-        player.addListener('not_ready', ({ device_id }) => {
-          console.log('Device ID has gone offline', device_id);
-        });
-
-        player.addListener('initialization_error', ({ message }) => {
-          console.log('initialization_error: ', message);
-        });
-
-        player.addListener('authentication_error', ({ message }) => {
-          console.log('authentication_error:', message);
-          if (currToken && currToken !== prevToken && retryRefreshTokenCount < 2) {
-            retryRefreshTokenCount++;
-            refreshToken() // page refreshes when tokenContext gets updated
-          }
-        });
-
-        player.addListener('playback_error', ({ message }) => {
-          console.log('playback_error:', message);
-        });
-
-        player.addListener('account_error', ({ message }) => {
-          // TODO: display error messages to user if useful
-          console.log('account_error: ', message);
-        });
-
-        player.addListener('player_state_changed', ((state) => {
-          if (!state) {
-            return;
-          }
-
-          setTrack(state.track_window.current_track);
-          setActive(false);
-
-          player.getCurrentState().then(state => {
-            (state?.paused) ? setActive(false) : setActive(true);
+          player.addListener('ready', async (state) => {
+            const { device_id } = state;
+            console.log('Ready with Device ID', device_id);
+            if (!device_id) {
+              throw new Error('Device ID is null');
+            }
+            await callSpotifyApi({
+              data: {
+                device_ids: [device_id],
+                play: false
+              },
+              method: "PUT",
+              path: "me/player",
+            });
           });
 
-        }));
+          player.addListener('not_ready', ({ device_id }) => {
+            console.log('Device ID has gone offline', device_id);
+          });
 
-        player.connect();
-      };
+          player.addListener('initialization_error', ({ message }) => {
+            console.log('initialization_error: ', message);
+          });
+
+          player.addListener('authentication_error', async ({ message }) => {
+            console.log('authentication_error:', message);
+            if (tokenExists(token) && retryRefreshTokenCount < 2) {
+              retryRefreshTokenCount++;
+              const newToken = await getNewToken()
+              setToken(newToken);
+            }
+          });
+
+          player.addListener('playback_error', ({ message }) => {
+            console.log('playback_error:', message);
+          });
+
+          player.addListener('account_error', ({ message }) => {
+            // TODO: display error messages to user if useful
+            console.log('account_error: ', message);
+          });
+
+          player.addListener('player_state_changed', ((state) => {
+            if (!state) {
+              return;
+            }
+
+            setTrack(state.track_window.current_track);
+            setActive(false);
+
+            player.getCurrentState().then(async (state) => {
+              console.log('player state changed', state);
+              if (!state) {
+                return;
+              }
+              const { context: { uri }, paused } = state;
+              // check if current playlist is a dp playlist
+              if (uri && uri.includes('playlist')) {
+                const playlistId = uri.split(':')[2];
+                if (!activePlaylist || activePlaylist !== playlistId) {
+                  const { data } = await callApi({
+                    method: 'GET',
+                    path: `playlists/by-spotify-id/${playlistId}`
+                  });
+                  if (!data.length) {
+                    setActivePlaylist(null);
+                  }
+                }
+              }
+              (paused) ? setActive(false) : setActive(true);
+            });
+
+          }));
+          player.connect();
+        };
+      }
+      startPlayer();
     }
-    startPlayer();
-  }, []);
+  }, [token]);
 
   return (
     <div id="web-playback" className="container">

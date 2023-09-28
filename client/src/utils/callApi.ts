@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { SERVER_BASE_URL } from '../constants';
+import { getErrorMessage, tokenExists } from '.';
 
 type Props = {
   baseUrl?: string;
@@ -7,10 +8,12 @@ type Props = {
   path: string;
   data?: any;
   token?: string;
+  headers?: Header;
 }
 
 type Header = {
-  Authorization: string;
+  Authorization?: string;
+  'Content-Type'?: string;
 }
 
 type AxiosInput = {
@@ -26,6 +29,7 @@ const callApi = async ({
   path,
   data,
   token,
+  headers,
 }: Props): Promise<any> => {
   try {
     const axiosInput: AxiosInput = {
@@ -33,8 +37,11 @@ const callApi = async ({
         url: `${baseUrl || `${SERVER_BASE_URL}api/`}${path}`,
         data,
     }
-    if (token) {
+    if (tokenExists(token)) {
       axiosInput.headers = { Authorization: `Bearer ${token}` }
+    }
+    if (headers) {
+      axiosInput.headers = { ...headers }
     }
     const res = await axios(axiosInput);
     if (res.data.error) {
@@ -44,10 +51,11 @@ const callApi = async ({
       data: res.data,
     };
   } catch (error: any) {
+    const errorMsg = getErrorMessage(error);
     console.log('callApi input: ', { baseUrl, method, path, data, token });
-    console.error('callApi error: ', error);
+    console.error('callApi error: ', errorMsg, error);
     return {
-      errorMsg: error?.response?.data?.error?.message || error?.message || error,
+      errorMsg: getErrorMessage(errorMsg) || error,
     };
   }
 };

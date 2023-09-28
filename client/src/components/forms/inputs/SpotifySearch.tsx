@@ -37,6 +37,7 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
       const delayDebounceFn = setTimeout(async () => {
         async function searchSpotify() {
           if (currToken) {
+            const options = { dataAsQueryParams: true }
             const { errorMsg, data } = await callSpotifyApi({
               method: 'GET',
               path: 'search',
@@ -44,9 +45,7 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
                 q: textInputValue,
                 type: slotType
               },
-              token: currToken,
-              dataAsQueryParams: true,
-            });
+            }, options);
             if (errorMsg) {
               console.error(errorMsg);
             } else {

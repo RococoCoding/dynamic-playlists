@@ -14,10 +14,15 @@ function Login() {
     if (previouslyAuthorized) {
       // TODO: refactor to one function that can also be used in RequstToken
       // get spotify user id
-      const { data: { id: spotifyUserId } } = await callSpotifyApi({
+      const { errorMsg, data } = await callSpotifyApi({
         method: "GET",
         path: "me",
       });
+      if (errorMsg || !data) {
+        console.log('error logging in', errorMsg, data);
+        return;
+      }
+      const { id: spotifyUserId } = data;
       // double-check user exists in dp db as well
       if (spotifyUserId) {
         const { data: dpUser } = await callApi({

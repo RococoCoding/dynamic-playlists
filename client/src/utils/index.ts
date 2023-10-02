@@ -11,13 +11,14 @@ export const getToken = () => {
   return localStorage.getItem('access_token');
 }
 
-export const setToken = (token: string) => {
-  if (!token || token === 'undefined') {
-    throw new Error(`Missing or invalid token: ${token}`)
+export const setTokens = (accessToken: string, refreshToken: string) => {
+  if (!tokenExists(accessToken) && !tokenExists(refreshToken)) {
+    throw new Error(`Missing or invalid token: ${accessToken}, ${refreshToken}`);
   }
-  localStorage.setItem('access_token', token);
+  localStorage.setItem('access_token', accessToken);
+  localStorage.setItem('refresh_token', refreshToken);
 }
 
 export const tokenExists = (token?: string | null) => !!token && token !== 'undefined';
 
-export const getErrorMessage = (error: any) => error?.response?.data?.error?.message || error?.message;
+export const getErrorMessage = (error: any) => error?.response?.data?.error?.message || error?.response?.data?.error || error?.message;

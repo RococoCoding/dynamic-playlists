@@ -14,9 +14,14 @@ export interface PlaylistType {
   title: string;
 }
 
+export interface PlaylistWithSlots extends PlaylistType {
+  slots: Array<FullSlot>;
+}
+
 export interface FullSlot extends BaseSlot {
   id: string;
   created_at: string;
+  current_track?: string; // spotify id
   last_updated?: string;
   pool_id?: string;
   pool_spotify_id: string;

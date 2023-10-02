@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import callApi from "../utils/callApi";
 import useSpotifyApi from "../utils/useSpotifyApi";
 import { useUserContext } from "../contexts/user";
+import { setTokens } from "../utils";
 
 function RequestToken() {
   const [errorMsg, setErrorMsg] = useState<string>('');
@@ -30,7 +31,7 @@ function RequestToken() {
     }
     const fetchUser = async () => {
       // get access & refresh tokens
-      const { data } = await callSpotifyApi({
+      const { errorMsg, data } = await callSpotifyApi({
         baseUrl: 'https://accounts.spotify.com/api/',
         method: 'POST',
         path: 'token',
@@ -39,23 +40,29 @@ function RequestToken() {
         },
         data: body,
       })
-      localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('refresh_token', data.refresh_token);
-      // get spotify profile with user id
-      const { data: { id: spotifyUserId } } = await callSpotifyApi({
-        method: "GET",
-        path: "me",
-      });
-      // get / upsert dp user
-      if (spotifyUserId) {
-        const { data: newDpUser } = await callApi({
-          method: 'GET',
-          path: `users/${spotifyUserId}`,
+      if (!errorMsg) {
+        try {
+          setTokens(data.access_token, data.refresh_token);
+        } catch {
+          setErrorMsg(`Error: Could not set tokens. ${JSON.stringify(data)}`);
+          return;
+        }
+        // get spotify profile with user id
+        const { data: { id: spotifyUserId } } = await callSpotifyApi({
+          method: "GET",
+          path: "me",
         });
-        if (newDpUser) {
-          setUserIdContext(newDpUser.id);
-          // @ts-expect-error
-          window.location = `/home/${newDpUser.id}`;
+        // get / upsert dp user
+        if (spotifyUserId) {
+          const { data: newDpUser } = await callApi({
+            method: 'GET',
+            path: `users/${spotifyUserId}`,
+          });
+          if (newDpUser) {
+            setUserIdContext(newDpUser.id);
+            // @ts-expect-error
+            window.location = `/home/${newDpUser.id}`;
+          }
         }
       }
     }

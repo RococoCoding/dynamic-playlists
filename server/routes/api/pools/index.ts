@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { getPoolById, getPoolBySpotifyId, createPool, setPoolLastUpdated, deletePool } from '../../../services/pool/index.js';
+import { getPoolById, getPoolBySpotifyId, upsertPool, setPoolLastUpdated, deletePool } from '../../../services/pool/index.js';
 import { Pool } from '../../../types/index.js';
 
 const poolsRouter = Router();
@@ -39,7 +39,7 @@ poolsRouter.post('/', async (req: Request, res: Response) => {
   const pool: Omit<Pool, 'id' | 'last_updated'> = req.body;
 
   try {
-    const newPool = await createPool(pool);
+    const newPool = await upsertPool(pool);
     return res.status(201).send(newPool);
   } catch (err: any) {
     const errMsg = err?.message || err;

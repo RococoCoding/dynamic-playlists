@@ -1,6 +1,6 @@
 import { pool } from '../../index.js';
 import { Slot } from '../../types/index.js';
-import { createPool } from '../pool/index.js';
+import { upsertPool } from '../pool/index.js';
 
 const getSlotById = async (id: string): Promise<Slot | null> => {
   const { rows } = await pool.query(
@@ -27,29 +27,35 @@ const getSlotsByPlaylistId = async (playlistId: string): Promise<Slot[]> => {
 const createSlot = async (slot: Omit<Slot, 'id'>, spotify_id: string): Promise<Slot> => {
   const { type, name, playlist_id, artist_name, position } = slot;
   // TODO: transactions
-  const { id: pool_id } = await createPool({ spotify_id });
+  const { id: pool_id } = await upsertPool({ spotify_id });
   const { rows } = await pool.query(
-    `INSERT INTO slot (type, name, playlist_id, artist_name, position, pool_id)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING *`,
+    `WITH inserted AS (
+      INSERT INTO slot (type, name, playlist_id, artist_name, position, pool_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+     )
+     SELECT inserted.*, pool.last_updated AS pool_last_updated, pool.id AS pool_id, pool.spotify_id AS pool_spotify_id
+     FROM inserted
+     INNER JOIN pool ON inserted.pool_id = pool.id`,
     [type, name, playlist_id, artist_name, position, pool_id]
   );
   return rows[0];
 };
 
 const updateSlot = async (id: string, slot: Partial<Omit<Slot, 'id' | 'created_at' | 'created_by'>>, spotify_id: string): Promise<Slot | null> => {
-  const { type, name, artist_name, position } = slot;
-  const { id: pool_id } = await createPool({ spotify_id });
-  const { rows } = await pool.query(
+  const { type, name, artist_name, position, current_track } = slot;
+  const { id: pool_id } = await upsertPool({ spotify_id });
+    const { rows } = await pool.query(
     `UPDATE slot
      SET type = COALESCE($1, type),
          name = COALESCE($2, name),
          artist_name = COALESCE($3, artist_name),
          pool_id = COALESCE($4, pool_id),
-         position = COALESCE($5, position)
-     WHERE id = $6
+         position = COALESCE($5, position),
+         current_track = COALESCE($6, current_track)
+     WHERE id = $7
      RETURNING *;`,
-    [type, name, artist_name, pool_id, position, id]
+    [type, name, artist_name, pool_id, position, current_track, id]
   );
   return rows.length > 0 ? {...rows[0], id } : null;
 };

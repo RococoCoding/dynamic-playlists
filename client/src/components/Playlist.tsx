@@ -172,7 +172,9 @@ function Playlist({
         spotifyPlaylistId = newSpotifyPlaylistId;
       }
     } else {
-      // clear existing playlist in spotify
+      // clear existing playlist in 
+      // TODO: Should probably just create new playlist with same name & delete old one upon success
+      // OR figure out how to use snapshots to revert if something goes wrong creating the updated playlist
       const { errorMsg } = await callSpotifyApi({
         method: 'PUT',
         path: `playlists/${spotifyPlaylistId}/tracks`,
@@ -189,12 +191,15 @@ function Playlist({
     // update spotify playlist with current slots
     // convert each slot to a spotify uri of a track
     const uris = await Promise.all(slots.map(async (slot) => {
-      const { type, name, pool_id, pool_spotify_id } = slot;
+      const { id: slotId, type, name, pool_id, pool_spotify_id } = slot;
+      console.log('slot', slot.name)
+      let spotifyId = pool_spotify_id;
       // TODO: figure out if this is timing I want for updating
       // const poolNeedsUpdating = !pool_last_updated || new Date(pool_last_updated) < new Date(playlist.last_updated);
       switch (type) {
         case SLOT_TYPES_MAP_BY_NAME.track:
-          return `spotify:track:${pool_spotify_id}`;
+          console.log('track spotify id', pool_spotify_id);
+          break;
         case SLOT_TYPES_MAP_BY_NAME.album:
           if (!pool_id || !pool_spotify_id) {
             console.log('Expected pool_id & pool_spotify_id for album slot')
@@ -206,10 +211,9 @@ function Playlist({
             // pick a track
             const track = pickRandomTrack(albumTracks);
             if (track) {
-              return `spotify:track:${track.spotify_track_id}`;
+              spotifyId = track.spotify_track_id;
             }
           }
-          console.log('No uri added for album slot: ', slot.id, ' name: ', name, ' spotify id: ', pool_spotify_id);
           break;
         case SLOT_TYPES_MAP_BY_NAME.artist:
           if (!pool_id || !pool_spotify_id) {
@@ -232,10 +236,9 @@ function Playlist({
             // pick a track
             const track = pickRandomTrack(allTracks);
             if (track) {
-              return `spotify:track:${track.spotify_track_id}`;
+              spotifyId = track.spotify_track_id;
             }
           }
-          console.log('No uri added for artist slot: ', slot.id, ' name: ', ' spotify id: ', pool_spotify_id);
           break;
         default: console.log('Unexpected slot type', type);
         // copilot just threw this in. Will check it later when I implement playlist support
@@ -258,6 +261,19 @@ function Playlist({
         //     data: playlistTracks.map(({ track }: any) => ({
         //       pool_id,
       }
+      if (!spotifyId) {
+        console.log('No spotifyId added for slot: ', slotId, ' name: ', name);
+      } else {
+        await callApi({
+          method: 'PUT',
+          path: `slots/${slotId}`,
+          data: {
+            current_track: spotifyId,
+            pool_spotify_id,
+          }
+        });
+        return `spotify:track:${spotifyId}`;
+      }
     }));
     // remove undefined uris
     const filteredUris = uris.filter((uri, index) => {
@@ -267,6 +283,7 @@ function Playlist({
       return !!uri;
     });
     // update spotify playlist with selected tracks
+    console.log('updating spotify playlist with tracks', filteredUris);
     const { errorMsg } = await callSpotifyApi({
       method: 'PUT',
       path: `playlists/${spotifyPlaylistId}/tracks`,

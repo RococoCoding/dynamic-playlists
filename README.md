@@ -10,11 +10,11 @@ Major TODOS before release:
 - Global snackbar to handle API error messages
 - Testing
 - Refactor pools
+- Button to start playing a playlist
 
 Misc Todos:
 - add switch to web playback button
 - shuffle
-- 
 
 A Spotify web player where you can design dynamic playlists that autorefresh with new songs as you listen.
 In a dynamic playlist you can add tracks, which behave normally, or slots, which will rotate between songs from a selection of songs as you listen. Slots can be populated with artists, albums, or playlists. (Support for recommendations is planned but will not be in the initial release.)

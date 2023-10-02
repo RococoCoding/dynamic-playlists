@@ -18,7 +18,7 @@ const getPoolBySpotifyId = async (spotifyId: string, market: string): Promise<Po
   return rows;
 };
 
-const createPool = async (pool: Omit<Pool, 'id' | 'last_updated'>): Promise<Pool> => {
+const upsertPool = async (pool: Omit<Pool, 'id' | 'last_updated'>): Promise<Pool> => {
   const { spotify_id } = pool;
   const { rows: poolRows } = await connectionPool.query(
     `SELECT *
@@ -58,7 +58,7 @@ const deletePool = async (id: string): Promise<void> => {
 export {
   getPoolById,
   getPoolBySpotifyId,
-  createPool,
+  upsertPool,
   setPoolLastUpdated,
   deletePool,
 };

@@ -44,7 +44,7 @@ const useSpotifyApi = () => {
       path = `${path}?${params.toString()}`;
     }
     let res;
-    if (!tokenExists(accessToken) && !tokenExists(refreshToken)) {
+    if (!options.skipToken && !tokenExists(accessToken) && !tokenExists(refreshToken)) {
       console.log('no access or refresh token, redirecting to login');
       redirect('/login');
     } else {
@@ -62,7 +62,6 @@ const useSpotifyApi = () => {
       }
       const accessTokenExpired = res.errorMsg && res.errorMsg.includes('expired');
       if (!accessToken || accessTokenExpired) {
-        console.log('Access token expired or missing. Attemping refresh.');
         const newAccessToken = await getNewToken();
         if (newAccessToken) {
           return callApi({

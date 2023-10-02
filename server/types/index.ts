@@ -21,14 +21,15 @@ export type SlotType = typeof VALID_SLOT_TYPES[number];
 
 export interface Slot {
   id: UUID;
+  artist_name: string[];
   created_at: Date;
+  current_track?: string;
   last_updated: Date;
   name: string;
   playlist_id: UUID;
   pool_id?: UUID;
-  type: SlotType;
-  artist_name: string[];
   position: number;
+  type: SlotType;
 }
 
 export interface PoolTrack {
@@ -38,3 +39,6 @@ export interface PoolTrack {
   spotify_artist_ids?: Array<string>; // For future feature of banning artists
 }
 
+export interface PlaylistWithSlots extends Playlist {
+  slots: Array<Slot>;
+}

@@ -9,6 +9,7 @@ import useRefreshToken from '../utils/refreshToken';
 import useSpotifyApi from '../utils/useSpotifyApi';
 import callApi from '../utils/callApi';
 import { tokenExists } from '../utils';
+import { FullSlot, PlaylistWithSlots, SpotifyTrackType } from '../types';
 
 const PlayerCard = styled(Card)({
   display: 'flex',
@@ -69,28 +70,22 @@ const PlayerControls = styled('div')({
   display: 'flex',
 });
 
-const track = {
-  name: "",
-  album: {
-    images: [
-      { url: "" }
-    ]
-  },
-  artists: [
-    { name: "" }
-  ]
-};
 let retryRefreshTokenCount = 0;
 
+let timeoutId: NodeJS.Timeout | null = null;
+
 function WebPlayback() {
-  const [isActive, setActive] = useState<null | boolean>();
+  const [isPaused, setPaused] = useState<null | boolean>();
+  const [instanceIsActive, setInstanceActive] = useState<null | boolean>();
   const [player, setPlayer] = useState<undefined | Spotify.Player>(undefined);
-  const [currentTrack, setTrack] = useState(track);
-  const [activePlaylist, setActivePlaylist] = useState<null | string>(null);
-  const [token, setToken] = useState<string | null | undefined>(localStorage.getItem('access_token')); 
+  const [componentCurrentTrack, setComponentTrack] = useState<SpotifyTrackType | null>(null);
+  const [activePlaylist, setActivePlaylist] = useState<null | PlaylistWithSlots>(null);
+  const [token, setToken] = useState<string | null | undefined>(localStorage.getItem('access_token'));
   const { getNewToken } = useRefreshToken();
   const { callSpotifyApi } = useSpotifyApi();
+  const [playerState, setPlayerState] = useState<null | Spotify.PlaybackState>(null);
 
+  // setup web playback sdk, add listeners to player
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://sdk.scdn.co/spotify-player.js";
@@ -151,63 +146,131 @@ function WebPlayback() {
           });
 
           player.addListener('player_state_changed', ((state) => {
-            if (!state) {
+            if (!state || !state.track_window.current_track) {
               return;
             }
-
-            setTrack(state.track_window.current_track);
-            setActive(false);
-
+            setPlayerState(state);
             player.getCurrentState().then(state => {
-              (state?.paused) ? setActive(false) : setActive(true);
+              (!state) ? setInstanceActive(false) : setInstanceActive(true)
             });
-
           }));
 
           player.connect();
         };
       }
       startPlayer();
+    } else {
+      console.log('Cannot start webplayback without token');
     }
   }, [token]);
 
-  return (
-    <div id="web-playback" className="container">
-      {player &&
-        <PlayerCard id="web-playback">
-          {currentTrack && 
-            <TrackInfoContainer>
-              {/* @ts-expect-error component might not be showing because of style wrapper, but it's needed */}
-              <TrackImage component="img" image={currentTrack.album.images[0].url} alt="Album cover thumbnail" />
-              <TrackInfo>
-                <div className="scroll-container" style={{ flexGrow: '1' }}>
-                  <div className={currentTrack.name.length > 22 ? "scroll-content" : ""}>
-                    <TrackTitle variant="subtitle1">{currentTrack.name || 'No track selected'}</TrackTitle>
-                  </div>
-                </div>
-                <div className="scroll-container">
-                  <div className={currentTrack.artists[0]?.name.length > 22 ? "scroll-content" : ""}>
-                    <TrackArtist variant="subtitle2">{currentTrack.artists[0]?.name || ''}</TrackArtist>
-                  </div>
-                </div>
-              </TrackInfo>
-            </TrackInfoContainer>
+  // handle state changes & dynamic updates when playerState changes
+  useEffect(() => {
+    if (!playerState || !playerState.track_window.current_track) {
+      return;
+    }
+
+    setPaused(playerState.paused);
+
+    // set current track if changed
+    const playerCurrentTrack = playerState.track_window.current_track as unknown as SpotifyTrackType;
+    const changedTrack = playerCurrentTrack.id !== componentCurrentTrack?.id;
+    console.log('0: changed track?', playerCurrentTrack, componentCurrentTrack)
+    if (changedTrack) {
+      setComponentTrack(playerCurrentTrack);
+      try {
+        const dynamicallyUpdatePlaylist = async () => {
+          console.log('1: start dyanmic update')
+          const [, contextType, id] = playerState?.context?.uri?.split(':') || [];
+          // do nothing if not currently listening to a playlist
+          if (contextType === 'playlist') {
+            // find & set active playlist if not set or switching playlists
+            console.log('2a: active playlist', id, activePlaylist);
+            if (!activePlaylist || activePlaylist.spotify_id !== id) {
+              const { errorMsg, data: dpPlaylist } = await callApi({
+                method: 'GET',
+                path: `playlists/by-spotify-id/${id}`,
+              })
+              if (errorMsg) {
+                console.log('getting dp playlist error', errorMsg);
+                return;
+              }
+              if (dpPlaylist.id) {
+                // set as current playlist as active playlist if it's not already the active list
+                console.log('3a: setting active playlist');
+                setActivePlaylist(dpPlaylist);
+              }
+            } else {
+              console.log('2b: in existing active playlist');
+              const currentSlot = activePlaylist.slots.find((slot: FullSlot) => slot.current_track === playerCurrentTrack.id);
+              if (currentSlot && componentCurrentTrack) {
+                console.log('3b: found current slot', currentSlot);
+                // update the slot with new track
+                // update the playlist with new track
+                // when state changes to a different song (if skipped or finished)
+                // get new pool of songs & randomly select new track
+                // update the slot with new track
+                // update the playlist with new track
+              }
+            }
           }
-          <PlayerControls>
-            <ControlButton onClick={() => { player.previousTrack(); }}>
-              <SkipPreviousIcon fontSize='small' />
-            </ControlButton>
-            <ControlButton onClick={() => { player.togglePlay(); }}>
-              {isActive ? <PauseIcon fontSize='small' /> : <PlayArrowIcon fontSize='small' />}
-            </ControlButton>
-            <ControlButton onClick={() => { player.nextTrack(); }}>
-              <SkipNextIcon fontSize='small' />
-            </ControlButton>
-          </PlayerControls>
-        </PlayerCard>
+        };
+        dynamicallyUpdatePlaylist();
+      } catch (e) {
+        console.log('error dynamically updating playlist', e);
       }
-    </div>
-  );
+    }
+
+  }, [playerState]);
+
+  if (!instanceIsActive) {
+    return (
+      <>
+        <div className="container">
+          <div className="main-wrapper">
+            <b> Instance is loading or inactive.</b>
+          </div>
+        </div>
+      </>)
+  } else {
+    return (
+      <div id="web-playback" className="container">
+        {player &&
+          <PlayerCard id="web-playback">
+            {componentCurrentTrack &&
+              <TrackInfoContainer>
+                {/* @ts-expect-error component attr might not be showing because of style wrapper, but it's needed */}
+                <TrackImage component="img" image={componentCurrentTrack.album.images[0].url} alt="Album cover thumbnail" />
+                <TrackInfo>
+                  <div className="scroll-container" style={{ flexGrow: '1' }}>
+                    <div className={componentCurrentTrack.name.length > 22 ? "scroll-content" : ""}>
+                      <TrackTitle variant="subtitle1">{componentCurrentTrack.name || 'No track selected'}</TrackTitle>
+                    </div>
+                  </div>
+                  <div className="scroll-container">
+                    <div className={componentCurrentTrack.artists[0]?.name.length > 22 ? "scroll-content" : ""}>
+                      <TrackArtist variant="subtitle2">{componentCurrentTrack.artists[0]?.name || ''}</TrackArtist>
+                    </div>
+                  </div>
+                </TrackInfo>
+              </TrackInfoContainer>
+            }
+            <PlayerControls>
+              <ControlButton onClick={() => { player.previousTrack(); }}>
+                <SkipPreviousIcon fontSize='small' />
+              </ControlButton>
+              <ControlButton onClick={() => { player.togglePlay(); }}>
+                {isPaused ? <PlayArrowIcon fontSize='small' /> : <PauseIcon fontSize='small' />}
+              </ControlButton>
+              <ControlButton onClick={() => { player.nextTrack(); }}>
+                <SkipNextIcon fontSize='small' />
+              </ControlButton>
+            </PlayerControls>
+          </PlayerCard>
+        }
+      </div>
+    );
+  }
 }
 
 export default WebPlayback;

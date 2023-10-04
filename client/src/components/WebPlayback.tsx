@@ -170,7 +170,7 @@ function WebPlayback() {
     if (!playerState || !playerState.track_window.current_track) {
       return;
     }
-    // using JSON.parse/stringify to deep copy object because player state might update before async function is done
+    // using JSON.parse/stringify to deep copy object because player state might update before all async functions are done
     const playerCurrentTrack = JSON.parse(JSON.stringify(playerState.track_window.current_track)) as unknown as SpotifyTrackType;
     const prevTrack = { ...componentCurrentTrack };
     const changedTrack = playerCurrentTrack.id !== prevTrack?.id;

@@ -8,15 +8,16 @@ import AlbumIcon from '@mui/icons-material/Album';
 import AudiotrackIcon from '@mui/icons-material/Audiotrack';
 import QueueMusicIcon from '@mui/icons-material/QueueMusic';
 import PublishIcon from '@mui/icons-material/Publish';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PlayCircleIcon from '@mui/icons-material/PlayCircle';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 import ListItem from './presentational/ListItem';
 import { SLOT_TYPES_MAP_BY_ID, SLOT_TYPES_MAP_BY_NAME } from '../constants';
 import callApi from '../utils/callApi';
-import { BaseSlot, FullSlot, PlaylistType, PoolTrack, SearchResultOption, SpotifyAlbumType, SpotifyEntry } from '../types/index.js';
+import { BaseSlot, FullSlot, PlaylistType, SearchResultOption, SpotifyEntry } from '../types/index.js';
 import BaseDialog from './forms/BaseDialog';
 import EditSlot from './forms/EditSlot';
-import { getRandomTrack, requiresArtist } from '../utils';
+import { getRandomTrack, playPlaylistInSpotify, requiresArtist } from '../utils';
 import useSpotifyApi from '../utils/useSpotifyApi';
 import { useUserContext } from '../contexts/user';
 
@@ -126,9 +127,8 @@ function Playlist({
         spotifyPlaylistId = newSpotifyPlaylistId;
       }
     } else {
-      // clear existing playlist in 
-      // TODO: Should probably just create new playlist with same name & delete old one upon success
-      // OR figure out how to use snapshots to revert if something goes wrong creating the updated playlist
+      // clear existing playlist in spotify
+      // TODO: Should probably create new playlist with same name & delete old one upon success?
       const { errorMsg } = await callSpotifyApi({
         method: 'PUT',
         path: `playlists/${spotifyPlaylistId}/tracks`,
@@ -221,19 +221,25 @@ function Playlist({
     }
   }
 
-  const playPlaylist = async () => {
-    const { errorMsg, data } = await callSpotifyApi({
-      method: 'PUT',
-      path: `me/player/play`,
-      data: {
-        context_uri: `spotify:playlist:${playlist.spotify_id}`,
-        position_ms: 0,
-      },
+  const handleDeleteSlot = async (id: string) => {
+    const { errorMsg, data: newSlots } = await callApi({
+      method: 'DELETE',
+      path: `slots/${id}?return_all=true`,
     });
+    if (errorMsg) {
+      setApiError(errorMsg);
+    } else if (!newSlots || !Array.isArray(newSlots) || newSlots.length !== slots.length - 1) {
+      setApiError('Unable to update slots after deletion.');
+    } else {
+      setSlots(newSlots);
+    }
+  }
+
+  const playPlaylist = async () => {
+    const { errorMsg } = await playPlaylistInSpotify(callSpotifyApi, playlist.spotify_id);
     if (errorMsg) {
       console.log('Error playing playlist in Spotify', errorMsg);
     }
-    console.log('playing playlist', data);
   }
 
   const EditSlotDialogContent = (
@@ -272,7 +278,7 @@ function Playlist({
         <ListTitle>{playlist.title}</ListTitle>
         <PlaylistActionsContainer>
           <PlaylistActionButton variant="contained" onClick={playPlaylist}>
-            <PlayArrowIcon />
+            <PlayCircleIcon />
           </PlaylistActionButton>
           <PlaylistActionButton variant="contained" onClick={openCreateSlotForm}>
             <AddIcon />
@@ -291,7 +297,10 @@ function Playlist({
                 {label}
               </div>
             </div>
-            <EditIcon style={{ marginRight: '5px' }} onClick={() => selectSlotToEdit(slot.id)} />
+            <div>
+              <DeleteIcon onClick={() => handleDeleteSlot(slot.id)} />
+              <EditIcon style={{ marginRight: '5px' }} onClick={() => selectSlotToEdit(slot.id)} />
+            </div>
           </SlotInnerContent>
         );
         return (

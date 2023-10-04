@@ -5,11 +5,12 @@ import PauseIcon from '@mui/icons-material/Pause';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import { styled } from '@mui/material/styles';
+
 import useRefreshToken from '../utils/refreshToken';
 import useSpotifyApi from '../utils/useSpotifyApi';
-import callApi from '../utils/callApi';
-import { tokenExists } from '../utils';
-import { FullSlot, PlaylistWithSlots, SpotifyTrackType } from '../types';
+import { deleteTrackFromSpotifyPlaylist, getDpPlaylist, getRandomTrack, getSpotifyPlaylist, tokenExists, updateSlotWithNewTrack, updateSpotifyPlaylistWithNewTrack } from '../utils';
+import { FullSlot, SpotifyTrackType } from '../types';
+import { SLOT_TYPES, SLOT_TYPES_MAP_BY_NAME } from '../constants';
 
 const PlayerCard = styled(Card)({
   display: 'flex',
@@ -72,14 +73,11 @@ const PlayerControls = styled('div')({
 
 let retryRefreshTokenCount = 0;
 
-let timeoutId: NodeJS.Timeout | null = null;
-
 function WebPlayback() {
   const [isPaused, setPaused] = useState<null | boolean>();
   const [instanceIsActive, setInstanceActive] = useState<null | boolean>();
   const [player, setPlayer] = useState<undefined | Spotify.Player>(undefined);
   const [componentCurrentTrack, setComponentTrack] = useState<SpotifyTrackType | null>(null);
-  const [activePlaylist, setActivePlaylist] = useState<null | PlaylistWithSlots>(null);
   const [token, setToken] = useState<string | null | undefined>(localStorage.getItem('access_token'));
   const { getNewToken } = useRefreshToken();
   const { callSpotifyApi } = useSpotifyApi();
@@ -97,7 +95,7 @@ function WebPlayback() {
         window.onSpotifyWebPlaybackSDKReady = () => {
 
           const player = new window.Spotify.Player({
-            name: 'Web Playback SDK',
+            name: 'Dynamic Playlists - Spotify Web Playback SDK',
             getOAuthToken: cb => { cb(token as string); },
             volume: 0.5
           });
@@ -149,6 +147,9 @@ function WebPlayback() {
             if (!state || !state.track_window.current_track) {
               return;
             }
+            setPaused(state.paused);
+            // had problems syncing state + async calls with listener so pushing all updates to component state
+            // and handling updates in useEffect
             setPlayerState(state);
             player.getCurrentState().then(state => {
               (!state) ? setInstanceActive(false) : setInstanceActive(true)
@@ -169,58 +170,88 @@ function WebPlayback() {
     if (!playerState || !playerState.track_window.current_track) {
       return;
     }
-
-    setPaused(playerState.paused);
-
-    // set current track if changed
-    const playerCurrentTrack = playerState.track_window.current_track as unknown as SpotifyTrackType;
-    const changedTrack = playerCurrentTrack.id !== componentCurrentTrack?.id;
-    console.log('0: changed track?', playerCurrentTrack, componentCurrentTrack)
-    if (changedTrack) {
-      setComponentTrack(playerCurrentTrack);
-      try {
+    // using JSON.parse/stringify to deep copy object because player state might update before async function is done
+    const playerCurrentTrack = JSON.parse(JSON.stringify(playerState.track_window.current_track)) as unknown as SpotifyTrackType;
+    const prevTrack = { ...componentCurrentTrack };
+    const changedTrack = playerCurrentTrack.id !== prevTrack?.id;
+    try {
+      if (changedTrack) {
         const dynamicallyUpdatePlaylist = async () => {
-          console.log('1: start dyanmic update')
-          const [, contextType, id] = playerState?.context?.uri?.split(':') || [];
-          // do nothing if not currently listening to a playlist
-          if (contextType === 'playlist') {
-            // find & set active playlist if not set or switching playlists
-            console.log('2a: active playlist', id, activePlaylist);
-            if (!activePlaylist || activePlaylist.spotify_id !== id) {
-              const { errorMsg, data: dpPlaylist } = await callApi({
-                method: 'GET',
-                path: `playlists/by-spotify-id/${id}`,
-              })
-              if (errorMsg) {
-                console.log('getting dp playlist error', errorMsg);
-                return;
-              }
-              if (dpPlaylist.id) {
-                // set as current playlist as active playlist if it's not already the active list
-                console.log('3a: setting active playlist');
-                setActivePlaylist(dpPlaylist);
-              }
-            } else {
-              console.log('2b: in existing active playlist');
-              const currentSlot = activePlaylist.slots.find((slot: FullSlot) => slot.current_track === playerCurrentTrack.id);
-              if (currentSlot && componentCurrentTrack) {
-                console.log('3b: found current slot', currentSlot);
-                // update the slot with new track
-                // update the playlist with new track
-                // when state changes to a different song (if skipped or finished)
-                // get new pool of songs & randomly select new track
-                // update the slot with new track
-                // update the playlist with new track
-              }
+          const [, contextType, spotifyPlaylistId] = playerState?.context?.uri?.split(':') || [];
+          if (contextType !== SLOT_TYPES.playlist) {
+            return;
+          }
+          let activePlaylist;
+          // always retrieve playlist from db to get latest slot info (in case of updates while listening)
+          // TODO: prob worthwhile to store/sync all playlist ids in store so we can avoid this call every time
+          const { errorMsg, data: dpPlaylist } = await getDpPlaylist(spotifyPlaylistId);
+          if (errorMsg) {
+            throw new Error(`getting dp playlist error: ${errorMsg}`,);
+          }
+          if (!dpPlaylist.id) {
+            // don't do anything if not listening to a dp playlist
+            return;
+          }
+          activePlaylist = dpPlaylist;
+
+          // find slot that matches previous track
+          const slots = activePlaylist.slots;
+          const previousSlotIndex = slots.findIndex((slot: FullSlot) => {
+            return slot.current_track === prevTrack?.id
+          });
+          const previousSlot = slots[previousSlotIndex];
+          if (previousSlot && prevTrack && previousSlot.type !== SLOT_TYPES_MAP_BY_NAME.track) {
+            // get random track from pool
+            const newTrackUri = await getRandomTrack(previousSlot, callSpotifyApi);
+            const newTrackId = newTrackUri?.split(':')[2];
+            if (!newTrackId) {
+              throw new Error('error getting new track from pool');
+            }
+
+            // update the spotify playlist with new track
+            const { errorMsg: errorMsg1 } = await updateSpotifyPlaylistWithNewTrack(spotifyPlaylistId, previousSlot.position, newTrackUri, callSpotifyApi);
+            if (errorMsg1) {
+              throw new Error(`error updating spotify playlist ${errorMsg1}`);
+            }
+
+            // update the slot with new track
+            const { errorMsg: errorMsg2, data: returnedSlot } = await updateSlotWithNewTrack(previousSlot.id, newTrackId);
+            if (errorMsg2) {
+              // TODO: this might be a critical error because now the slot data in db is out of sync with the spotify playlist
+              // there's local version of the slot so they're probably fine during the session, but the slot data in db is out of sync
+              // so if they quit the site and then come back, it'll be out of sync
+              // quick fix -- user can republish the playlist, but they'll get new random tracks each time
+              throw new Error(`error updating slot ${errorMsg2}`);
+            }
+
+            // sync local state activePlaylist.slots using mutation
+            slots.splice(previousSlotIndex, 1, returnedSlot);
+
+            // get snapshot id
+            const { errorMsg: errorMsg3, data: spotifyPlaylist } = await getSpotifyPlaylist(spotifyPlaylistId, callSpotifyApi);
+            if (errorMsg3) {
+              // TODO: similar to above, now the playlist is out of sync becasue we won't be able to delete the target track
+              throw new Error(`getting spotify playlist error: ${errorMsg3}`);
+            }
+            const { snapshot_id } = spotifyPlaylist;
+            if (!snapshot_id) {
+            }
+
+            // delete previous track from spotify playlist
+            const { errorMsg: errorMsg4 } = await deleteTrackFromSpotifyPlaylist(spotifyPlaylistId, snapshot_id, callSpotifyApi, prevTrack.uri);
+            if (errorMsg4) {
+              // TODO: similar to above, now the playlist is out of sync becasue we won't be able to delete the target track
+              throw new Error(`getting spotify playlist error: ${errorMsg4}`);
             }
           }
         };
         dynamicallyUpdatePlaylist();
-      } catch (e) {
-        console.log('error dynamically updating playlist', e);
       }
+    } catch (e) {
+      console.log('error dynamically updating playlist', e);
     }
-
+    // update component with new track
+    setComponentTrack(playerCurrentTrack);
   }, [playerState]);
 
   if (!instanceIsActive) {

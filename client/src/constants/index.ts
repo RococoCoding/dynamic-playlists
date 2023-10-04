@@ -2,10 +2,17 @@ export const SPOTIFY_BASE_URL = 'https://api.spotify.com/v1/';
 
 export const SERVER_BASE_URL = 'http://localhost:5000/';
 
+export const SLOT_TYPES = {
+  track: 'track',
+  artist: 'artist',
+  album: 'album',
+  playlist: 'playlist',
+}
+
 export const SLOT_TYPES_MAP_BY_ID = {
-  1: 'track',
-  2: 'artist',
-  3: 'album',
+  1: SLOT_TYPES.track,
+  2: SLOT_TYPES.artist,
+  3: SLOT_TYPES.album,
   // 4: 'playlist',
 }
 
@@ -24,6 +31,6 @@ export const SLOT_TYPE_TO_SPOTIFY_RETURN_TYPE = {
 
 export type SlotType = typeof SLOT_TYPES_MAP_BY_ID[keyof typeof SLOT_TYPES_MAP_BY_ID];
 
-export const SLOT_TYPES:SlotType[] = Object.values(SLOT_TYPES_MAP_BY_ID) as SlotType[];
+export const SLOT_TYPES_LIST:SlotType[] = Object.values(SLOT_TYPES_MAP_BY_ID) as SlotType[];
 
 export const SLOT_TYPES_THAT_REQUIRE_ARTIST = [SLOT_TYPES_MAP_BY_NAME.track, SLOT_TYPES_MAP_BY_NAME.album, SLOT_TYPES_MAP_BY_NAME.playlist];

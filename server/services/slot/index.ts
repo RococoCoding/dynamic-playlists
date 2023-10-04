@@ -43,8 +43,12 @@ const createSlot = async (slot: Omit<Slot, 'id'>, spotify_id: string): Promise<S
 };
 
 const updateSlot = async (id: string, slot: Partial<Omit<Slot, 'id' | 'created_at' | 'created_by'>>, spotify_id: string): Promise<Slot | null> => {
-  const { type, name, artist_name, position, current_track } = slot;
-  const { id: pool_id } = await upsertPool({ spotify_id });
+  const { type, name, artist_name, position, current_track, pool_id } = slot;
+  let poolId = pool_id;
+  if (spotify_id) {
+    const { id } = await upsertPool({ spotify_id });
+    poolId = id;
+  }
     const { rows } = await pool.query(
     `UPDATE slot
      SET type = COALESCE($1, type),
@@ -55,7 +59,7 @@ const updateSlot = async (id: string, slot: Partial<Omit<Slot, 'id' | 'created_a
          current_track = COALESCE($6, current_track)
      WHERE id = $7
      RETURNING *;`,
-    [type, name, artist_name, pool_id, position, current_track, id]
+    [type, name, artist_name, poolId, position, current_track, id]
   );
   return rows.length > 0 ? {...rows[0], id } : null;
 };

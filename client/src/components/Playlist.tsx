@@ -8,6 +8,7 @@ import AlbumIcon from '@mui/icons-material/Album';
 import AudiotrackIcon from '@mui/icons-material/Audiotrack';
 import QueueMusicIcon from '@mui/icons-material/QueueMusic';
 import PublishIcon from '@mui/icons-material/Publish';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 
 import ListItem from './presentational/ListItem';
 import { SLOT_TYPES_MAP_BY_ID, SLOT_TYPES_MAP_BY_NAME } from '../constants';
@@ -15,7 +16,7 @@ import callApi from '../utils/callApi';
 import { BaseSlot, FullSlot, PlaylistType, PoolTrack, SearchResultOption, SpotifyAlbumType, SpotifyEntry } from '../types/index.js';
 import BaseDialog from './forms/BaseDialog';
 import EditSlot from './forms/EditSlot';
-import { requiresArtist } from '../utils';
+import { getRandomTrack, requiresArtist } from '../utils';
 import useSpotifyApi from '../utils/useSpotifyApi';
 import { useUserContext } from '../contexts/user';
 
@@ -44,7 +45,7 @@ const PlaylistActionButton = styled(Button)({
 
 const PlaylistActionsContainer = styled('div')({
   display: 'flex',
-  width: '140px',
+  width: '200px',
   justifyContent: 'space-between',
 });
 
@@ -59,11 +60,6 @@ const SlotInnerContent = styled('div')({
 type Props = {
   playlist: PlaylistType;
   setApiError: (error: string) => void;
-}
-
-const pickRandomTrack = (pool: PoolTrack[]) => {
-  const randomIndex = Math.floor(Math.random() * pool.length);
-  return pool[randomIndex];
 }
 
 function Playlist({
@@ -92,48 +88,6 @@ function Playlist({
     setSelectedSlot(undefined);
     setSelectedEntry(null);
     setSelectedOption(null);
-  }
-
-  const getAlbumTracks = async (spotifyId: string): Promise<Array<PoolTrack> | undefined> => {
-    // TODO: rework pools
-    // if (poolNeedsUpdating) {
-    const input = {
-      method: 'GET',
-      path: `albums/${spotifyId}/tracks`,
-    }
-    const { errorMsg, data } = await callSpotifyApi(input);
-    if (!errorMsg && data) {
-      const tracks = data.items.map(({ id, name, artists }: SpotifyAlbumType) => ({
-        // pool_id: poolId,
-        name,
-        spotify_track_id: id,
-        spotify_artist_ids: artists.map((artist: any) => artist.id)
-      }));
-      // save tracks to pool
-      // console.log('saving tracks to pool');
-      // await callApi({
-      //   method: 'POST',
-      //   path: `pool-tracks/by-pool/${poolId}`,
-      //   data: tracks,
-      // });
-      return tracks;
-    } else {
-      console.log('Could not retrieve tracks from spotify', errorMsg)
-      console.log('callSpotifyApi input', input)
-    }
-    // }
-    // const input = {
-    //   method: 'GET',
-    //   path: `pool-tracks/by-pool/${poolId}`,
-    //   token: currToken,
-    // }
-    // const { errorMsg, data } = await callApi(input);
-    // if (!errorMsg && data) {
-    //   return data;
-    // } else {
-    //   console.log('Could not retrieve tracks from db', errorMsg)
-    //   console.log('callApi input', input)A
-    // }
   }
 
   const publishPlaylist = async () => {
@@ -191,89 +145,7 @@ function Playlist({
     // update spotify playlist with current slots
     // convert each slot to a spotify uri of a track
     const uris = await Promise.all(slots.map(async (slot) => {
-      const { id: slotId, type, name, pool_id, pool_spotify_id } = slot;
-      console.log('slot', slot.name)
-      let spotifyId = pool_spotify_id;
-      // TODO: figure out if this is timing I want for updating
-      // const poolNeedsUpdating = !pool_last_updated || new Date(pool_last_updated) < new Date(playlist.last_updated);
-      switch (type) {
-        case SLOT_TYPES_MAP_BY_NAME.track:
-          console.log('track spotify id', pool_spotify_id);
-          break;
-        case SLOT_TYPES_MAP_BY_NAME.album:
-          if (!pool_id || !pool_spotify_id) {
-            console.log('Expected pool_id & pool_spotify_id for album slot')
-            return;
-          }
-          // get album tracks
-          const albumTracks = await getAlbumTracks(pool_spotify_id);
-          if (albumTracks) {
-            // pick a track
-            const track = pickRandomTrack(albumTracks);
-            if (track) {
-              spotifyId = track.spotify_track_id;
-            }
-          }
-          break;
-        case SLOT_TYPES_MAP_BY_NAME.artist:
-          if (!pool_id || !pool_spotify_id) {
-            console.log('Expected pool_id & pool_spotify_id for artist slot')
-            return;
-          }
-          // get artist albums
-          const { errorMsg, data } = await callSpotifyApi({
-            method: 'GET',
-            path: `artists/${pool_spotify_id}/albums`,
-          });
-          if (errorMsg) {
-            console.log('Error clearing playlist in Spotify', errorMsg);
-            return;
-          }
-          const { items } = data;
-          // get tracks from each album
-          const allTracks = (await Promise.all(items.map(async (album: any) => getAlbumTracks(album.id)))).flat();
-          if (allTracks.length) {
-            // pick a track
-            const track = pickRandomTrack(allTracks);
-            if (track) {
-              spotifyId = track.spotify_track_id;
-            }
-          }
-          break;
-        default: console.log('Unexpected slot type', type);
-        // copilot just threw this in. Will check it later when I implement playlist support
-        // case SLOT_TYPES_MAP_BY_NAME.playlist:
-        //   // get playlist tracks
-        //   const { errorMsg: errorMsg2, data: data2 } = await callSpotifyApi({
-        //     method: 'GET',
-        //     path: `playlists/${pool_spotify_id}/tracks`,
-        //     token: currToken,
-        //   });
-        //   if (errorMsg2) {
-        //     console.log('Error clearing playlist in Spotify', errorMsg2);
-        //     return;
-        //   }
-        //   const { items: playlistTracks } = data2;
-        //   // save playlist tracks to pool
-        //   await callApi({
-        //     method: 'POST',
-        //     path: 'pool-tracks/',
-        //     data: playlistTracks.map(({ track }: any) => ({
-        //       pool_id,
-      }
-      if (!spotifyId) {
-        console.log('No spotifyId added for slot: ', slotId, ' name: ', name);
-      } else {
-        await callApi({
-          method: 'PUT',
-          path: `slots/${slotId}`,
-          data: {
-            current_track: spotifyId,
-            pool_spotify_id,
-          }
-        });
-        return `spotify:track:${spotifyId}`;
-      }
+      return getRandomTrack(slot, callSpotifyApi);
     }));
     // remove undefined uris
     const filteredUris = uris.filter((uri, index) => {
@@ -283,7 +155,6 @@ function Playlist({
       return !!uri;
     });
     // update spotify playlist with selected tracks
-    console.log('updating spotify playlist with tracks', filteredUris);
     const { errorMsg } = await callSpotifyApi({
       method: 'PUT',
       path: `playlists/${spotifyPlaylistId}/tracks`,
@@ -350,6 +221,21 @@ function Playlist({
     }
   }
 
+  const playPlaylist = async () => {
+    const { errorMsg, data } = await callSpotifyApi({
+      method: 'PUT',
+      path: `me/player/play`,
+      data: {
+        context_uri: `spotify:playlist:${playlist.spotify_id}`,
+        position_ms: 0,
+      },
+    });
+    if (errorMsg) {
+      console.log('Error playing playlist in Spotify', errorMsg);
+    }
+    console.log('playing playlist', data);
+  }
+
   const EditSlotDialogContent = (
     <EditSlot
       createMode={!selectedSlot}
@@ -385,6 +271,9 @@ function Playlist({
       <ListHeader>
         <ListTitle>{playlist.title}</ListTitle>
         <PlaylistActionsContainer>
+          <PlaylistActionButton variant="contained" onClick={playPlaylist}>
+            <PlayArrowIcon />
+          </PlaylistActionButton>
           <PlaylistActionButton variant="contained" onClick={openCreateSlotForm}>
             <AddIcon />
           </PlaylistActionButton>

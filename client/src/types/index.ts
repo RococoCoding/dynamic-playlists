@@ -60,6 +60,7 @@ export type SpotifyTrackType = {
   album: SpotifyAlbumType;
   artists: Array<SpotifyArtistType>;
   name: string;
+  uri: string;
 }
 
 

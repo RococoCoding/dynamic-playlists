@@ -1,5 +1,6 @@
 import { pool } from '../../index.js';
 import { Playlist, PlaylistWithSlots } from '../../types/index.js';
+import { getSlotsByPlaylistId } from '../slot/index.js';
 
 const getPlaylistById = async (id: string): Promise<Playlist | null> => {
   const { rows } = await pool.query(
@@ -22,22 +23,14 @@ const getPlaylistsByUserId = async (userId: string): Promise<Playlist[]> => {
 };
 
 const getPlaylistBySpotifyId = async (spotifyId: string): Promise<PlaylistWithSlots> => {
-  const { rows } = await pool.query(
-    `SELECT playlist.*, json_agg(slot.*) AS slots
-    FROM playlist
-    LEFT JOIN slot ON playlist.id = slot.playlist_id
-    WHERE playlist.spotify_id = $1
-    GROUP BY playlist.id`,
+  const { rows: playlist } = await pool.query(
+    `SELECT *
+     FROM playlist
+     WHERE spotify_id = $1`,
     [spotifyId]
   );
-  // try {
-  //   rows[0].slots = JSON.parse(rows[0].slots);
-  // } catch (e) {
-  //   console.error('Error parsing slots: ', e);
-  //   console.log(rows);
-  // }
-  console.log(rows[0])
-  return rows[0];
+  const slots = await getSlotsByPlaylistId(playlist[0].id);
+  return { ...playlist[0], slots };
 };
 
 const createPlaylist = async (playlist: Omit<Playlist, 'id' | 'created_at' | 'last_updated'>): Promise<Playlist> => {

@@ -53,7 +53,7 @@ const callApi = async ({
     };
   } catch (error: any) {
     const errorMsg = getErrorMessage(error);
-    console.log('callApi input: ', { baseUrl, method, path, data, token });
+    console.log('callApi input: ', { baseUrl, method, path, data: JSON.stringify(data), token });
     console.error('callApi error: ', errorMsg, error);
     return {
       errorMsg,

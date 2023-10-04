@@ -2,7 +2,7 @@ import { BaseSlot, FullSlot, SearchResultOption, SpotifyEntry } from "../../type
 import styled from "@emotion/styled";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
-import { SLOT_TYPES, SLOT_TYPES_MAP_BY_NAME } from "../../constants";
+import { SLOT_TYPES_LIST, SLOT_TYPES_MAP_BY_NAME } from "../../constants";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import InputLabel from "@mui/material/InputLabel";
@@ -61,7 +61,7 @@ function EditSlot({
           value={slotType}
           onChange={(event: SelectChangeEvent) => handleSelect(event.target.value)}
         >
-          {SLOT_TYPES.map((slotType) => {
+          {SLOT_TYPES_LIST.map((slotType) => {
             return (
               <MenuItem key={slotType} value={slotType}>{slotType}</MenuItem>
             )

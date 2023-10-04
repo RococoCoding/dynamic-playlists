@@ -5,10 +5,12 @@ import PauseIcon from '@mui/icons-material/Pause';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import { styled } from '@mui/material/styles';
+
 import useRefreshToken from '../utils/refreshToken';
 import useSpotifyApi from '../utils/useSpotifyApi';
-import callApi from '../utils/callApi';
-import { tokenExists } from '../utils';
+import { deleteTrackFromSpotifyPlaylist, getDpPlaylist, getRandomTrack, getSpotifyPlaylist, tokenExists, updateSlotWithNewTrack, updateSpotifyPlaylistWithNewTrack } from '../utils';
+import { FullSlot, SpotifyTrackType } from '../types';
+import { SLOT_TYPES, SLOT_TYPES_MAP_BY_NAME } from '../constants';
 
 const PlayerCard = styled(Card)({
   display: 'flex',
@@ -69,28 +71,19 @@ const PlayerControls = styled('div')({
   display: 'flex',
 });
 
-const track = {
-  name: "",
-  album: {
-    images: [
-      { url: "" }
-    ]
-  },
-  artists: [
-    { name: "" }
-  ]
-};
 let retryRefreshTokenCount = 0;
 
 function WebPlayback() {
-  const [isActive, setActive] = useState<null | boolean>();
+  const [isPaused, setPaused] = useState<null | boolean>();
+  const [instanceIsActive, setInstanceActive] = useState<null | boolean>();
   const [player, setPlayer] = useState<undefined | Spotify.Player>(undefined);
-  const [currentTrack, setTrack] = useState(track);
-  const [activePlaylist, setActivePlaylist] = useState<null | string>(null);
-  const [token, setToken] = useState<string | null | undefined>(localStorage.getItem('access_token')); 
+  const [componentCurrentTrack, setComponentTrack] = useState<SpotifyTrackType | null>(null);
+  const [token, setToken] = useState<string | null | undefined>(localStorage.getItem('access_token'));
   const { getNewToken } = useRefreshToken();
   const { callSpotifyApi } = useSpotifyApi();
+  const [playerState, setPlayerState] = useState<null | Spotify.PlaybackState>(null);
 
+  // setup web playback sdk, add listeners to player
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://sdk.scdn.co/spotify-player.js";
@@ -102,7 +95,7 @@ function WebPlayback() {
         window.onSpotifyWebPlaybackSDKReady = () => {
 
           const player = new window.Spotify.Player({
-            name: 'Web Playback SDK',
+            name: 'Dynamic Playlists - Spotify Web Playback SDK',
             getOAuthToken: cb => { cb(token as string); },
             volume: 0.5
           });
@@ -151,63 +144,164 @@ function WebPlayback() {
           });
 
           player.addListener('player_state_changed', ((state) => {
-            if (!state) {
+            if (!state || !state.track_window.current_track) {
               return;
             }
-
-            setTrack(state.track_window.current_track);
-            setActive(false);
-
+            setPaused(state.paused);
+            // had problems syncing state + async calls with listener so pushing all updates to component state
+            // and handling updates in useEffect
+            setPlayerState(state);
             player.getCurrentState().then(state => {
-              (state?.paused) ? setActive(false) : setActive(true);
+              (!state) ? setInstanceActive(false) : setInstanceActive(true)
             });
-
           }));
 
           player.connect();
         };
       }
       startPlayer();
+    } else {
+      console.log('Cannot start webplayback without token');
     }
   }, [token]);
 
-  return (
-    <div id="web-playback" className="container">
-      {player &&
-        <PlayerCard id="web-playback">
-          {currentTrack && 
-            <TrackInfoContainer>
-              {/* @ts-expect-error component might not be showing because of style wrapper, but it's needed */}
-              <TrackImage component="img" image={currentTrack.album.images[0].url} alt="Album cover thumbnail" />
-              <TrackInfo>
-                <div className="scroll-container" style={{ flexGrow: '1' }}>
-                  <div className={currentTrack.name.length > 22 ? "scroll-content" : ""}>
-                    <TrackTitle variant="subtitle1">{currentTrack.name || 'No track selected'}</TrackTitle>
-                  </div>
-                </div>
-                <div className="scroll-container">
-                  <div className={currentTrack.artists[0]?.name.length > 22 ? "scroll-content" : ""}>
-                    <TrackArtist variant="subtitle2">{currentTrack.artists[0]?.name || ''}</TrackArtist>
-                  </div>
-                </div>
-              </TrackInfo>
-            </TrackInfoContainer>
+  // handle state changes & dynamic updates when playerState changes
+  useEffect(() => {
+    if (!playerState || !playerState.track_window.current_track) {
+      return;
+    }
+    // using JSON.parse/stringify to deep copy object because player state might update before async function is done
+    const playerCurrentTrack = JSON.parse(JSON.stringify(playerState.track_window.current_track)) as unknown as SpotifyTrackType;
+    const prevTrack = { ...componentCurrentTrack };
+    const changedTrack = playerCurrentTrack.id !== prevTrack?.id;
+    try {
+      if (changedTrack) {
+        const dynamicallyUpdatePlaylist = async () => {
+          const [, contextType, spotifyPlaylistId] = playerState?.context?.uri?.split(':') || [];
+          if (contextType !== SLOT_TYPES.playlist) {
+            return;
           }
-          <PlayerControls>
-            <ControlButton onClick={() => { player.previousTrack(); }}>
-              <SkipPreviousIcon fontSize='small' />
-            </ControlButton>
-            <ControlButton onClick={() => { player.togglePlay(); }}>
-              {isActive ? <PauseIcon fontSize='small' /> : <PlayArrowIcon fontSize='small' />}
-            </ControlButton>
-            <ControlButton onClick={() => { player.nextTrack(); }}>
-              <SkipNextIcon fontSize='small' />
-            </ControlButton>
-          </PlayerControls>
-        </PlayerCard>
+          let activePlaylist;
+          // always retrieve playlist from db to get latest slot info (in case of updates while listening)
+          // TODO: prob worthwhile to store/sync all playlist ids in store so we can avoid this call every time
+          const { errorMsg, data: dpPlaylist } = await getDpPlaylist(spotifyPlaylistId);
+          if (errorMsg) {
+            throw new Error(`getting dp playlist error: ${errorMsg}`,);
+          }
+          if (!dpPlaylist.id) {
+            // don't do anything if not listening to a dp playlist
+            return;
+          }
+          activePlaylist = dpPlaylist;
+
+          // find slot that matches previous track
+          const slots = activePlaylist.slots;
+          const previousSlotIndex = slots.findIndex((slot: FullSlot) => {
+            return slot.current_track === prevTrack?.id
+          });
+          const previousSlot = slots[previousSlotIndex];
+          if (previousSlot && prevTrack && previousSlot.type !== SLOT_TYPES_MAP_BY_NAME.track) {
+            // get random track from pool
+            const newTrackUri = await getRandomTrack(previousSlot, callSpotifyApi);
+            const newTrackId = newTrackUri?.split(':')[2];
+            if (!newTrackId) {
+              throw new Error('error getting new track from pool');
+            }
+
+            // update the spotify playlist with new track
+            const { errorMsg: errorMsg1 } = await updateSpotifyPlaylistWithNewTrack(spotifyPlaylistId, previousSlot.position, newTrackUri, callSpotifyApi);
+            if (errorMsg1) {
+              throw new Error(`error updating spotify playlist ${errorMsg1}`);
+            }
+
+            // update the slot with new track
+            const { errorMsg: errorMsg2, data: returnedSlot } = await updateSlotWithNewTrack(previousSlot.id, newTrackId);
+            if (errorMsg2) {
+              // TODO: this might be a critical error because now the slot data in db is out of sync with the spotify playlist
+              // there's local version of the slot so they're probably fine during the session, but the slot data in db is out of sync
+              // so if they quit the site and then come back, it'll be out of sync
+              // quick fix -- user can republish the playlist, but they'll get new random tracks each time
+              throw new Error(`error updating slot ${errorMsg2}`);
+            }
+
+            // sync local state activePlaylist.slots using mutation
+            slots.splice(previousSlotIndex, 1, returnedSlot);
+
+            // get snapshot id
+            const { errorMsg: errorMsg3, data: spotifyPlaylist } = await getSpotifyPlaylist(spotifyPlaylistId, callSpotifyApi);
+            if (errorMsg3) {
+              // TODO: similar to above, now the playlist is out of sync becasue we won't be able to delete the target track
+              throw new Error(`getting spotify playlist error: ${errorMsg3}`);
+            }
+            const { snapshot_id } = spotifyPlaylist;
+            if (!snapshot_id) {
+            }
+
+            // delete previous track from spotify playlist
+            const { errorMsg: errorMsg4 } = await deleteTrackFromSpotifyPlaylist(spotifyPlaylistId, snapshot_id, callSpotifyApi, prevTrack.uri);
+            if (errorMsg4) {
+              // TODO: similar to above, now the playlist is out of sync becasue we won't be able to delete the target track
+              throw new Error(`getting spotify playlist error: ${errorMsg4}`);
+            }
+          }
+        };
+        dynamicallyUpdatePlaylist();
       }
-    </div>
-  );
+    } catch (e) {
+      console.log('error dynamically updating playlist', e);
+    }
+    // update component with new track
+    setComponentTrack(playerCurrentTrack);
+  }, [playerState]);
+
+  if (!instanceIsActive) {
+    return (
+      <>
+        <div className="container">
+          <div className="main-wrapper">
+            <b> Instance is loading or inactive.</b>
+          </div>
+        </div>
+      </>)
+  } else {
+    return (
+      <div id="web-playback" className="container">
+        {player &&
+          <PlayerCard id="web-playback">
+            {componentCurrentTrack &&
+              <TrackInfoContainer>
+                {/* @ts-expect-error component attr might not be showing because of style wrapper, but it's needed */}
+                <TrackImage component="img" image={componentCurrentTrack.album.images[0].url} alt="Album cover thumbnail" />
+                <TrackInfo>
+                  <div className="scroll-container" style={{ flexGrow: '1' }}>
+                    <div className={componentCurrentTrack.name.length > 22 ? "scroll-content" : ""}>
+                      <TrackTitle variant="subtitle1">{componentCurrentTrack.name || 'No track selected'}</TrackTitle>
+                    </div>
+                  </div>
+                  <div className="scroll-container">
+                    <div className={componentCurrentTrack.artists[0]?.name.length > 22 ? "scroll-content" : ""}>
+                      <TrackArtist variant="subtitle2">{componentCurrentTrack.artists[0]?.name || ''}</TrackArtist>
+                    </div>
+                  </div>
+                </TrackInfo>
+              </TrackInfoContainer>
+            }
+            <PlayerControls>
+              <ControlButton onClick={() => { player.previousTrack(); }}>
+                <SkipPreviousIcon fontSize='small' />
+              </ControlButton>
+              <ControlButton onClick={() => { player.togglePlay(); }}>
+                {isPaused ? <PlayArrowIcon fontSize='small' /> : <PauseIcon fontSize='small' />}
+              </ControlButton>
+              <ControlButton onClick={() => { player.nextTrack(); }}>
+                <SkipNextIcon fontSize='small' />
+              </ControlButton>
+            </PlayerControls>
+          </PlayerCard>
+        }
+      </div>
+    );
+  }
 }
 
 export default WebPlayback;

@@ -1,15 +1,15 @@
 import { pool } from '../../index.js';
-import { Playlist } from '../../types/index.js';
+import { Playlist, PlaylistWithSlots } from '../../types/index.js';
+import { getSlotsByPlaylistId } from '../slot/index.js';
 
 const getPlaylistById = async (id: string): Promise<Playlist | null> => {
   const { rows } = await pool.query(
-    `SELECT playlist.*, slot.*
+    `SELECT *
      FROM playlist
-     JOIN slot ON playlist.id = slot.playlist_id
-     WHERE playlist.id = $1`,
+     WHERE id = $1`,
     [id]
   );
-  return rows.length > 0 ? rows[0] : null;
+  return rows[0];
 };
 
 const getPlaylistsByUserId = async (userId: string): Promise<Playlist[]> => {
@@ -20,6 +20,17 @@ const getPlaylistsByUserId = async (userId: string): Promise<Playlist[]> => {
     [userId]
   );
   return rows;
+};
+
+const getPlaylistBySpotifyId = async (spotifyId: string): Promise<PlaylistWithSlots> => {
+  const { rows: playlist } = await pool.query(
+    `SELECT *
+     FROM playlist
+     WHERE spotify_id = $1`,
+    [spotifyId]
+  );
+  const slots = await getSlotsByPlaylistId(playlist[0].id);
+  return { ...playlist[0], slots };
 };
 
 const createPlaylist = async (playlist: Omit<Playlist, 'id' | 'created_at' | 'last_updated'>): Promise<Playlist> => {
@@ -73,6 +84,7 @@ const deletePlaylist = async (id: string): Promise<void> => {
 export {
   getPlaylistById,
   getPlaylistsByUserId,
+  getPlaylistBySpotifyId,
   createPlaylist,
   updatePlaylist,
   deletePlaylist,

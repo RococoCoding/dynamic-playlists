@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { getPlaylistById, getPlaylistsByUserId, createPlaylist, updatePlaylist, deletePlaylist } from '../../../services/playlist/index.js';
+import { getPlaylistById, getPlaylistsByUserId, createPlaylist, updatePlaylist, deletePlaylist, getPlaylistBySpotifyId } from '../../../services/playlist/index.js';
 import { Playlist } from '../../../types/index.js';
 
 const playlistsRouter = Router();
@@ -27,6 +27,17 @@ playlistsRouter.get('/by-user/:userId', async (req: Request, res: Response) => {
   try {
     const playlists = await getPlaylistsByUserId(userId);
     return res.status(200).send(playlists);
+  } catch (err: any) {
+    const errMsg = err?.message || err;
+    return res.status(500).json({ error: errMsg});
+  }
+});
+
+playlistsRouter.get('/by-spotify-id/:spotifyId', async (req: Request, res: Response) => {
+  const { spotifyId } = req.params;
+    try {
+    const playlist = await getPlaylistBySpotifyId(spotifyId);
+    return res.status(200).send(playlist);
   } catch (err: any) {
     const errMsg = err?.message || err;
     return res.status(500).json({ error: errMsg});

@@ -9,6 +9,7 @@ type Props = {
   data?: any;
   token?: string;
   headers?: Header;
+  signal?: AbortSignal;
 }
 
 type Header = {
@@ -30,18 +31,18 @@ const callApi = async ({
   data,
   token,
   headers,
+  signal,
 }: Props): Promise<any> => {
   try {
     const axiosInput: AxiosInput = {
         method,
         url: `${baseUrl || `${SERVER_BASE_URL}api/`}${path}`,
         data,
+        ...(signal ? { signal } : {}),
+        ...(headers ? { headers } : {})
     }
     if (tokenExists(token)) {
-      axiosInput.headers = { Authorization: `Bearer ${token}` }
-    }
-    if (headers) {
-      axiosInput.headers = { ...headers }
+      axiosInput.headers = { ...axiosInput.headers, Authorization: `Bearer ${token}` }
     }
     const res = await axios(axiosInput);
     if (res.data.error) {
@@ -52,10 +53,10 @@ const callApi = async ({
     };
   } catch (error: any) {
     const errorMsg = getErrorMessage(error);
-    console.log('callApi input: ', { baseUrl, method, path, data, token });
+    console.log('callApi input: ', { baseUrl, method, path, data: JSON.stringify(data), token });
     console.error('callApi error: ', errorMsg, error);
     return {
-      errorMsg: getErrorMessage(errorMsg) || error,
+      errorMsg,
     };
   }
 };

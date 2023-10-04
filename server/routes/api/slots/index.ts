@@ -40,8 +40,14 @@ slotsRouter.put('/:id', async (req, res) => {
 });
 
 slotsRouter.delete('/:id', async (req, res) => {
-  await deleteSlot(req.params.id);
-  res.send('Slot deleted');
+  const { id } = req.params;
+  const { return_all } = req.query;
+  const returned = await deleteSlot(id, !!return_all);
+  if (return_all) {
+    res.json(returned);
+  } else {
+    res.send('Slot deleted');
+  }
 });
 
 export default slotsRouter;

@@ -1,16 +1,14 @@
 Dynamic Playlists (Under Development)
 
 Major TODOS before release:
-- Publish a playlist to spotify (🔨🚧🏗️)
-- Update playlist with new tracks during listening through DP app
 - Scrolling for longer playlists
 - Support drag n drop for slot positioning
-- Delete slots
 - Spotify attributions & branding guidelines
 - Global snackbar to handle API error messages
 - Testing
 - Refactor pools
-- Button to start playing a playlist
+- Buttons to start playing a specific track in a playlist
+- Investigate continuing issues with refreshing token sometimes
 
 Misc Todos:
 - add switch to web playback button

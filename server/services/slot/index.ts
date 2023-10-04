@@ -64,8 +64,12 @@ const updateSlot = async (id: string, slot: Partial<Omit<Slot, 'id' | 'created_a
   return rows.length > 0 ? {...rows[0], id } : null;
 };
 
-const deleteSlot = async (id: string): Promise<void> => {
-  await pool.query('DELETE FROM slot WHERE id = $1', [id]);
+const deleteSlot = async (id: string, returnAll?: boolean): Promise<void | Array<Slot>> => {
+  const deletedSlot = await pool.query('DELETE FROM slot WHERE id = $1 RETURNING *', [id]);
+  if (returnAll) {
+    const remainingSlots = await pool.query('SELECT * FROM slot WHERE playlist_id = $1', [deletedSlot.rows[0].playlist_id]);
+    return remainingSlots.rows;
+  }
 };
 
 export {

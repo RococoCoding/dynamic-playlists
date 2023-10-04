@@ -223,3 +223,17 @@ export const deleteTrackFromSpotifyPlaylist = async (
     path: `playlists/${playlistId}/tracks`,
   });
 }
+
+export const playPlaylistInSpotify = async (callSpotifyApi: Function, playlistId?: string, ) => {
+  if (!playlistId) {
+    throw new Error('Missing Spotify playlistId');
+  }
+  return callSpotifyApi({
+      method: 'PUT',
+      path: `me/player/play`,
+      data: {
+        context_uri: `spotify:playlist:${playlistId}`,
+        position_ms: 0,
+      },
+    });
+}

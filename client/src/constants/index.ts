@@ -1,3 +1,13 @@
+export const ENVIRONMENTS = {
+  development: 'development',
+  production: 'production',
+}
+
+export const ERROR_ACTIONS = {
+  reauth: 'reauth',
+  republish: 'republish',
+}
+
 export const SPOTIFY_BASE_URL = 'https://api.spotify.com/v1/';
 
 export const SERVER_BASE_URL = 'http://localhost:5000/';

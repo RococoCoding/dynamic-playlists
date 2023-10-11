@@ -8,9 +8,14 @@ import { styled } from '@mui/material/styles';
 
 import useRefreshToken from '../utils/refreshToken';
 import useSpotifyApi from '../utils/useSpotifyApi';
-import { deleteTrackFromSpotifyPlaylist, getDpPlaylist, getRandomTrack, getSpotifyPlaylist, tokenExists, updateSlotWithNewTrack, updateSpotifyPlaylistWithNewTrack } from '../utils';
+import { getErrorMessage, getRandomTrack, setWebPlayback } from '../utils';
 import { FullSlot, SpotifyTrackType } from '../types';
-import { SLOT_TYPES, SLOT_TYPES_MAP_BY_NAME } from '../constants';
+import { ENVIRONMENTS, ERROR_ACTIONS, SLOT_TYPES, SLOT_TYPES_MAP_BY_NAME } from '../constants';
+import { getDpPlaylistBySpotifyId } from '../utils/playlists/dp';
+import { updateSpotifyPlaylistWithNewTrack, getSpotifyPlaylist, deleteTrackFromSpotifyPlaylist } from '../utils/playlists/spotify';
+import { updateSlotWithNewTrack } from '../utils/slots';
+import { tokenExists } from '../utils/tokens';
+import { useSnackbarContext } from '../contexts/snackbar';
 
 const PlayerCard = styled(Card)({
   display: 'flex',
@@ -82,6 +87,7 @@ function WebPlayback() {
   const { getNewToken } = useRefreshToken();
   const { callSpotifyApi } = useSpotifyApi();
   const [playerState, setPlayerState] = useState<null | Spotify.PlaybackState>(null);
+  const { setErrorSnackbar } = useSnackbarContext();
 
   // setup web playback sdk, add listeners to player
   useEffect(() => {
@@ -103,44 +109,58 @@ function WebPlayback() {
 
           player.addListener('ready', async (state) => {
             const { device_id } = state;
-            console.log('Ready with Device ID', device_id);
             if (!device_id) {
               throw new Error('Device ID is null');
             }
-            await callSpotifyApi({
-              data: {
-                device_ids: [device_id],
-                play: false
-              },
-              method: "PUT",
-              path: "me/player",
-            });
+            await setWebPlayback(callSpotifyApi, device_id);
           });
 
           player.addListener('not_ready', ({ device_id }) => {
-            console.log('Device ID has gone offline', device_id);
+            if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+              console.log('Device ID has gone offline', device_id);
+            }
           });
 
           player.addListener('initialization_error', ({ message }) => {
-            console.log('initialization_error: ', message);
+            if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+              console.log('initialization_error: ', message);
+            }
           });
 
           player.addListener('authentication_error', async ({ message }) => {
-            console.log('authentication_error:', message);
+            if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+              console.log('authentication_error:', message);
+            }
+            // check if this is trying to refresh too many times because of listener / async issues
+            let countInside = 0;
             if (tokenExists(token) && retryRefreshTokenCount < 2) {
               retryRefreshTokenCount++;
-              const newToken = await getNewToken()
-              setToken(newToken);
+              countInside++;
+              if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+                console.log('retrying refresh token', retryRefreshTokenCount, countInside);
+              }
+              try {
+                const newToken = await getNewToken();
+                setToken(newToken || null);
+              } catch (e) {
+                if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+                  console.log('error refreshing token', e);
+                }
+              }
             }
           });
 
           player.addListener('playback_error', ({ message }) => {
-            console.log('playback_error:', message);
+            if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+              console.log('playback_error:', message);
+            }
           });
 
           player.addListener('account_error', ({ message }) => {
             // TODO: display error messages to user if useful
-            console.log('account_error: ', message);
+            if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+              console.log('account_error: ', message);
+            }
           });
 
           player.addListener('player_state_changed', ((state) => {
@@ -184,10 +204,7 @@ function WebPlayback() {
           let activePlaylist;
           // always retrieve playlist from db to get latest slot info (in case of updates while listening)
           // TODO: prob worthwhile to store/sync all playlist ids in store so we can avoid this call every time
-          const { errorMsg, data: dpPlaylist } = await getDpPlaylist(spotifyPlaylistId);
-          if (errorMsg) {
-            throw new Error(`getting dp playlist error: ${errorMsg}`,);
-          }
+          const dpPlaylist = await getDpPlaylistBySpotifyId(spotifyPlaylistId);
           if (!dpPlaylist.id) {
             // don't do anything if not listening to a dp playlist
             return;
@@ -209,46 +226,57 @@ function WebPlayback() {
             }
 
             // update the spotify playlist with new track
-            const { errorMsg: errorMsg1 } = await updateSpotifyPlaylistWithNewTrack(spotifyPlaylistId, previousSlot.position, newTrackUri, callSpotifyApi);
-            if (errorMsg1) {
-              throw new Error(`error updating spotify playlist ${errorMsg1}`);
-            }
+            await updateSpotifyPlaylistWithNewTrack(spotifyPlaylistId, previousSlot.position, newTrackUri, callSpotifyApi);
 
             // update the slot with new track
-            const { errorMsg: errorMsg2, data: returnedSlot } = await updateSlotWithNewTrack(previousSlot.id, newTrackId);
-            if (errorMsg2) {
-              // TODO: this might be a critical error because now the slot data in db is out of sync with the spotify playlist
-              // there's local version of the slot so they're probably fine during the session, but the slot data in db is out of sync
-              // so if they quit the site and then come back, it'll be out of sync
-              // quick fix -- user can republish the playlist, but they'll get new random tracks each time
-              throw new Error(`error updating slot ${errorMsg2}`);
-            }
+            try {
+              const returnedSlot = await updateSlotWithNewTrack(previousSlot.id, newTrackId);
 
-            // sync local state activePlaylist.slots using mutation
-            slots.splice(previousSlotIndex, 1, returnedSlot);
+              // sync local state activePlaylist.slots using mutation
+              slots.splice(previousSlotIndex, 1, returnedSlot);
 
-            // get snapshot id
-            const { errorMsg: errorMsg3, data: spotifyPlaylist } = await getSpotifyPlaylist(spotifyPlaylistId, callSpotifyApi);
-            if (errorMsg3) {
-              // TODO: similar to above, now the playlist is out of sync becasue we won't be able to delete the target track
-              throw new Error(`getting spotify playlist error: ${errorMsg3}`);
-            }
-            const { snapshot_id } = spotifyPlaylist;
-            if (!snapshot_id) {
-            }
+              // get snapshot id
+              let snapshotId;
+              try {
+                const spotifyPlaylist = await getSpotifyPlaylist(spotifyPlaylistId, callSpotifyApi);
+                if (!spotifyPlaylist || !spotifyPlaylist.snapshot_id) {
+                  throw new Error(`Missing spotify playlist or snapshot_id: ${spotifyPlaylist}`);
+                }
+                snapshotId = spotifyPlaylist.snapshot_id;
+              } catch (e) {
+                if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+                  console.log('error getting spotify playlist', e);
+                }
+                throw new Error(`getting spotify playlist error: ${getErrorMessage(e)}`);
+              }
 
-            // delete previous track from spotify playlist
-            const { errorMsg: errorMsg4 } = await deleteTrackFromSpotifyPlaylist(spotifyPlaylistId, snapshot_id, callSpotifyApi, prevTrack.uri);
-            if (errorMsg4) {
-              // TODO: similar to above, now the playlist is out of sync becasue we won't be able to delete the target track
-              throw new Error(`getting spotify playlist error: ${errorMsg4}`);
+              // delete previous track from spotify playlist
+              try {
+                await deleteTrackFromSpotifyPlaylist(spotifyPlaylistId, snapshotId, callSpotifyApi, prevTrack.uri);
+              } catch (e) {
+                if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+                  console.log('error deleting previous track', e);
+                }
+                throw new Error(`deleting previous track error: ${getErrorMessage(e)}`);
+              }
+            } catch (e: any) {
+              e.next = ERROR_ACTIONS.republish;
+              throw e;
             }
           }
         };
         dynamicallyUpdatePlaylist();
       }
-    } catch (e) {
-      console.log('error dynamically updating playlist', e);
+    } catch (e: any) {
+      if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+        console.log('error dynamically updating playlist', e);
+      }
+      if (e.next === ERROR_ACTIONS.republish) {
+        // TODO: Figure out a better solution for getting out of sync with spotify version of the playlist
+        setErrorSnackbar('Error during playlist update. Please republish the playlist to re-sync with Spotify.');
+      } else {
+        setErrorSnackbar('Could not update playlist.');
+      }
     }
     // update component with new track
     setComponentTrack(playerCurrentTrack);

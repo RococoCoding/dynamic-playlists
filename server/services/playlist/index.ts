@@ -22,15 +22,18 @@ const getPlaylistsByUserId = async (userId: string): Promise<Playlist[]> => {
   return rows;
 };
 
-const getPlaylistBySpotifyId = async (spotifyId: string): Promise<PlaylistWithSlots> => {
+const getPlaylistBySpotifyId = async (spotifyId: string): Promise<PlaylistWithSlots | null> => {
   const { rows: playlist } = await pool.query(
     `SELECT *
      FROM playlist
      WHERE spotify_id = $1`,
     [spotifyId]
   );
-  const slots = await getSlotsByPlaylistId(playlist[0].id);
-  return { ...playlist[0], slots };
+  if (playlist[0]) {
+    const slots = await getSlotsByPlaylistId(playlist[0].id);
+    return { ...playlist[0], slots };
+  }
+  return null;
 };
 
 const createPlaylist = async (playlist: Omit<Playlist, 'id' | 'created_at' | 'last_updated'>): Promise<Playlist> => {

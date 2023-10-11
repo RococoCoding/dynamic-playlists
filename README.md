@@ -8,11 +8,34 @@ Major TODOS before release:
 - Testing
 - Refactor pools
 - Buttons to start playing a specific track in a playlist
-- Investigate continuing issues with refreshing token sometimes
+- Investigate continuing issues with refreshing token 
+- bugfix: styling on mobile
+- <details>
+  <summary>bugfix: auto update positions when deleting slots</summary>
+    copilot spit this out, investigate it
+    ```sql
+    CREATE OR REPLACE FUNCTION update_slot_positions()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      UPDATE slots
+      SET position = position - 1
+      WHERE playlistid = OLD.playlistid AND position > OLD.position;
+      RETURN OLD;
+    END;
+    $$ LANGUAGE plpgsql;
+    CREATE TRIGGER update_slot_positions_trigger
+    AFTER DELETE ON slots
+    FOR EACH ROW
+    EXECUTE FUNCTION update_slot_positions();
+    ```
+</details>
 
 Misc Todos:
 - add switch to web playback button
 - shuffle
+- submit feedback form
+- bugfix: handle key error when adding two of identical slots
+- figure out redirect using router-dom
 
 A Spotify web player where you can design dynamic playlists that autorefresh with new songs as you listen.
 In a dynamic playlist you can add tracks, which behave normally, or slots, which will rotate between songs from a selection of songs as you listen. Slots can be populated with artists, albums, or playlists. (Support for recommendations is planned but will not be in the initial release.)

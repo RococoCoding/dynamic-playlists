@@ -4,6 +4,7 @@ import WebPlayback from './WebPlayback';
 import { Typography, Container, Box, Paper, Button, DialogTitle, DialogContent } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useParams } from 'react-router-dom';
 import TextInput from './forms/inputs/TextInput';
 import { PlaylistType } from '../types/index.js';
@@ -13,10 +14,11 @@ import BaseDialog from './forms/BaseDialog';
 import { useUserContext } from '../contexts/user';
 import { getErrorMessage } from '../utils';
 import { useSnackbarContext } from '../contexts/snackbar';
-import { createDpPlaylist, getAllUserPlaylists } from '../utils/playlists/dp';
+import { createDpPlaylist, deleteDpPlaylist, getAllUserPlaylists } from '../utils/playlists/dp';
 import { getToken } from '../utils/tokens';
 import { ENVIRONMENTS } from '../constants';
 import ErrorBoundary from './ErrorBoundary';
+import { Delete } from '@mui/icons-material';
 
 const MainContainer = styled(Container)({
   padding: '20px 0px 30px 0px'
@@ -47,6 +49,13 @@ const WebPlaybackContainer = styled(Box)({
 
 const CreatePlaylistButton = styled(Button)({
   marginBottom: '15px',
+});
+
+const ListItemInnerContent = styled('div')({
+  display: 'flex',
+  width: '100%',
+  padding: '5px',
+  justifyContent: 'space-between',
 });
 
 const StyledDialogTitle = styled(DialogTitle)({
@@ -114,6 +123,30 @@ function Home() {
     handleDialogClose();
   };
 
+  const handleDeletePlaylist = async (playlistId: string) => {
+    try {
+      await deleteDpPlaylist(playlistId);
+      setSelectedPlaylist(undefined);
+      try {
+        const playlists = await getAllUserPlaylists(userId);
+        if (playlists && playlists.length) {
+          const sorted = sortPlaylistsByLastUpdated(playlists);
+          setPlaylists(sorted);
+        }
+      } catch (e) {
+        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+          console.log('error getting updated playlists after deleting playlist', e);
+        }
+        setErrorSnackbar('Errro getting updated playlists after deleting playlist.');
+      }
+    } catch (e: any) {
+      if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+        console.log('error deleting playlist', e);
+      }
+      setErrorSnackbar('Error deleting playlist.');
+    }
+  }
+
   const openCreatePlaylistForm = () => {
     setOpenCreatePlaylist(true);
   };
@@ -148,13 +181,15 @@ function Home() {
     async function getPlaylists() {
       try {
         const playlists = await getAllUserPlaylists(userId);
-        if (!playlists) {
-          throw new Error('No data returned from get playlists request.')
+        if (playlists && playlists.length) {
+          const sorted = sortPlaylistsByLastUpdated(playlists);
+          setPlaylists(sorted);
         }
-        const sorted = sortPlaylistsByLastUpdated(playlists);
-        setPlaylists(sorted);
       } catch (e) {
-        setErrorSnackbar(getErrorMessage(e));
+        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+          console.log('error getting playlists', e);
+        }
+        setErrorSnackbar('Error getting playlists.');
       }
     }
 
@@ -179,7 +214,11 @@ function Home() {
                   </CreatePlaylistButton>
                 </ListHeader>
                 {playlists.map(playlist => {
-                  const innerContent = <Typography variant="subtitle1" fontWeight="bold">{playlist.title}</Typography>;
+                  const innerContent =
+                    <ListItemInnerContent>
+                      <Typography variant="subtitle1" fontWeight="bold">{playlist.title}</Typography>
+                      <DeleteIcon onClick={() => handleDeletePlaylist(playlist.id)} />
+                    </ListItemInnerContent>
                   return <ListItem
                     key={playlist.id}
                     id={playlist.id}

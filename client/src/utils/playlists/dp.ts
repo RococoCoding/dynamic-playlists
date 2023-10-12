@@ -14,6 +14,13 @@ export const createDpPlaylist = async (title: string, userId: string):Promise<Pl
   return data;
 }
 
+export const deleteDpPlaylist = async (playlistId: string):Promise<void> => {
+  await callApi({
+    method: 'DELETE',
+    path: `playlists/${playlistId}`,
+  });
+}
+
 export const getDpPlaylistBySpotifyId = async (playlistId: string):Promise<PlaylistWithSlots> => {
   const { data } = await callApi({
     method: 'GET',

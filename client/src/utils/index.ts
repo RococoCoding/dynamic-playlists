@@ -104,7 +104,11 @@ export const getRandomTrack = async (slot: FullSlot, callSpotifyApi: Function) =
       }
       const { items } = data;
       // get tracks from each album
-      const allTracks = (await Promise.all(items.map(async (album: any) => getAlbumTracks(album.id, callSpotifyApi)))).flat();
+      const allTracks = (await Promise.all(items.map(async (album: any) => {
+        if (album.album_group !== 'appears_on') {
+          return getAlbumTracks(album.id, callSpotifyApi)
+        }
+      }))).filter(item => !!item).flat();
       if (allTracks.length) {
         // pick a track
         const track = pickRandomTrack(allTracks);

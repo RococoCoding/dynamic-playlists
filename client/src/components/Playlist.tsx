@@ -139,11 +139,12 @@ function Playlist({
         setErrorSnackbar('Error creating new Spotify playlist.');
       }
     } else {
+      // clear existing playlist in spotify
+      await clearSpotifyPlaylist(callSpotifyApi, spotifyPlaylistId);
+    }
+    if (spotifyPlaylistId) {
       // TODO: Should probably create new playlist with same name & delete old one upon success?
       try {
-        // clear existing playlist in spotify
-        await clearSpotifyPlaylist(callSpotifyApi, spotifyPlaylistId);
-
         // update spotify playlist with current slots
         // convert each slot to a spotify uri of a track
         const uris = await Promise.all(slots.map(async (slot) => {
@@ -172,7 +173,7 @@ function Playlist({
         setErrorSnackbar('Error populating Spotify playlist.');
       }
     }
-  }  
+  }
 
   const selectSlotToEdit = (id: string) => {
     const slot = slots.find((slot) => slot.id === id);

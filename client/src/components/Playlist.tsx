@@ -12,14 +12,22 @@ import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 import ListItem from './presentational/ListItem';
-import { SLOT_TYPES_MAP_BY_ID, SLOT_TYPES_MAP_BY_NAME } from '../constants';
-import callApi from '../utils/callApi';
+import { ENVIRONMENTS, SLOT_TYPES_MAP_BY_ID, SLOT_TYPES_MAP_BY_NAME } from '../constants';
 import { BaseSlot, FullSlot, PlaylistType, SearchResultOption, SpotifyEntry } from '../types/index.js';
 import BaseDialog from './forms/BaseDialog';
 import EditSlot from './forms/EditSlot';
-import { getRandomTrack, playPlaylistInSpotify, requiresArtist } from '../utils';
+import { getRandomTrack, requiresArtist } from '../utils';
 import useSpotifyApi from '../utils/useSpotifyApi';
 import { useUserContext } from '../contexts/user';
+import { useSnackbarContext } from '../contexts/snackbar';
+import { linkSpotifyPlaylistToDpPlaylist } from '../utils/playlists/dp';
+import {
+  publishSpotifyPlaylist,
+  playPlaylistInSpotify,
+  clearSpotifyPlaylist,
+  populateSpotifyPlaylist
+} from '../utils/playlists/spotify';
+import { editOrCreateSlot, deleteSlot, getSlotsByPlaylistId } from '../utils/slots';
 
 const iconTypeMapping = {
   [SLOT_TYPES_MAP_BY_NAME.track]: <AudiotrackIcon />,
@@ -60,12 +68,10 @@ const SlotInnerContent = styled('div')({
 
 type Props = {
   playlist: PlaylistType;
-  setApiError: (error: string) => void;
 }
 
 function Playlist({
   playlist,
-  setApiError
 }: Props) {
   const [slots, setSlots] = useState<FullSlot[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<SpotifyEntry | null>(null);
@@ -76,6 +82,19 @@ function Playlist({
   const editMode = !!selectedSlot;
   const { userId } = useUserContext();
   const { callSpotifyApi } = useSpotifyApi();
+  const { setErrorSnackbar, setInfoSnackbar } = useSnackbarContext();
+
+  const EditSlotDialogContent = (
+    <EditSlot
+      createMode={!selectedSlot}
+      slotType={slotType}
+      selectedSlot={selectedSlot}
+      selectedOption={selectedOption}
+      setSlotType={setSlotType}
+      setSelectedEntry={setSelectedEntry}
+      setSelectedOption={setSelectedOption}
+    />
+  )
 
   const openCreateSlotForm = () => {
     setOpenEditSlotDialog(true);
@@ -85,7 +104,7 @@ function Playlist({
     setOpenEditSlotDialog(false);
   };
 
-  const clearState = () => {
+  const clearSelectedState = () => {
     setSelectedSlot(undefined);
     setSelectedEntry(null);
     setSelectedOption(null);
@@ -98,72 +117,60 @@ function Playlist({
     // TODO: support private playlists
     if (!spotifyPlaylistId) {
       // spotify api call to create a new empty playlist
-      const { errorMsg, data } = await callSpotifyApi({
-        method: 'POST',
-        path: `users/${userId}/playlists`,
-        data: {
-          name: playlist.title,
+      try {
+        const { id } = await publishSpotifyPlaylist(callSpotifyApi, playlist.title, userId);
+        spotifyPlaylistId = id;
+        if (!spotifyPlaylistId) {
+          throw new Error('No id returned from Spotify playlist creation.');
         }
-      });
-      if (errorMsg) {
-        console.log('Error creating playlist in Spotify', errorMsg);
-        return;
-      }
-      const { id: newSpotifyPlaylistId } = data;
-
-      // save spotify playlist id to playlist in dp db
-      const { errorMsg: errorMsg2 } = await callApi({
-        method: 'PUT',
-        path: `playlists/${playlist.id}`,
-        data: {
-          spotify_id: newSpotifyPlaylistId,
-          last_updated_by: userId,
+        try {
+        // save spotify playlist id to playlist in dp db
+          await linkSpotifyPlaylistToDpPlaylist(playlist.id, spotifyPlaylistId, userId);
+        } catch (e) {
+          if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+            console.log(e);
+          }
+          setErrorSnackbar('Spotify playlist created, but error linking to DP playlist.');
         }
-      });
-      if (errorMsg2) {
-        console.log('Error saving spotify playlist id to playlist in db', errorMsg2);
-        return;
-      } else {
-        spotifyPlaylistId = newSpotifyPlaylistId;
+      } catch (e) {
+        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+          console.log(e);
+        }
+        setErrorSnackbar('Error creating new Spotify playlist.');
       }
     } else {
-      // clear existing playlist in spotify
       // TODO: Should probably create new playlist with same name & delete old one upon success?
-      const { errorMsg } = await callSpotifyApi({
-        method: 'PUT',
-        path: `playlists/${spotifyPlaylistId}/tracks`,
-        data: {
-          uris: [],
-        }
-      });
-      if (errorMsg) {
-        console.log('Error clearing playlist in Spotify', errorMsg);
-        return;
-      };
-    }
+      try {
+        // clear existing playlist in spotify
+        await clearSpotifyPlaylist(callSpotifyApi, spotifyPlaylistId);
 
-    // update spotify playlist with current slots
-    // convert each slot to a spotify uri of a track
-    const uris = await Promise.all(slots.map(async (slot) => {
-      return getRandomTrack(slot, callSpotifyApi);
-    }));
-    // remove undefined uris
-    const filteredUris = uris.filter((uri, index) => {
-      if (!uri) {
-        console.log('undefined uri at index ', index);
+        // update spotify playlist with current slots
+        // convert each slot to a spotify uri of a track
+        const uris = await Promise.all(slots.map(async (slot) => {
+          return getRandomTrack(slot, callSpotifyApi);
+        }));
+
+        // remove undefined uris
+        const skippedTracks: Array<string> = [];
+        const filteredUris = uris.filter((uri, index) => {
+          if (!uri) {
+            skippedTracks.push(slots[index].name);
+          }
+          return !!uri;
+        }) as Array<string>;
+
+        // update spotify playlist with selected tracks
+        await populateSpotifyPlaylist(callSpotifyApi, spotifyPlaylistId, filteredUris);
+
+        if (skippedTracks.length) {
+          setInfoSnackbar(`Playlist published with skipped slots: ${skippedTracks.join('\n')}`);
+        }
+      } catch (e) {
+        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+          console.log(e);
+        }
+        setErrorSnackbar('Error populating Spotify playlist.');
       }
-      return !!uri;
-    });
-    // update spotify playlist with selected tracks
-    const { errorMsg } = await callSpotifyApi({
-      method: 'PUT',
-      path: `playlists/${spotifyPlaylistId}/tracks`,
-      data: {
-        uris: filteredUris,
-      }
-    });
-    if (errorMsg) {
-      console.log('Error updating playlist in Spotify', errorMsg);
     }
   }  
 
@@ -182,89 +189,81 @@ function Playlist({
   }
 
   const handleEditSlotSubmit = async () => {
-    if (selectedEntry) {
-      const newSlot: BaseSlot = {
-        name: selectedEntry.name,
-        type: SLOT_TYPES_MAP_BY_NAME[slotType],
-        position: slots.length,
-      }
-      if ('artists' in selectedEntry) {
-        newSlot.artist_name = selectedEntry.artists.map((artist) => artist.name);
-      } else if ('owner' in selectedEntry) {
-        newSlot.artist_name = [selectedEntry.owner.display_name];
-      }
-      if (editMode) {
-        newSlot.position = selectedSlot.position;
-      }
-      const { errorMsg, data: returnedSlot } = await callApi({
-        method: editMode ? 'PUT' : 'POST',
-        path: editMode ? `slots/${selectedSlot.id}` : 'slots',
-        data: {
-          ...newSlot,
-          playlist_id: playlist.id,
-          spotify_id: selectedEntry.id,
+    if (selectedEntry && selectedOption?.value) {
+      try {
+        const newSlot: BaseSlot = {
+          name: selectedEntry.name,
+          type: SLOT_TYPES_MAP_BY_NAME[slotType],
+          position: slots.length,
         }
-      });
-      if (errorMsg) {
-        setApiError(errorMsg);
-      } else {
-        const newSlots = [...slots];
+        if ('artists' in selectedEntry) {
+          newSlot.artist_name = selectedEntry.artists.map((artist) => artist.name);
+        } else if ('owner' in selectedEntry) {
+          newSlot.artist_name = [selectedEntry.owner.display_name];
+        }
         if (editMode) {
-          newSlots.splice(returnedSlot.position, 1, returnedSlot);
-        } else {
-          newSlots.push(returnedSlot);
+          newSlot.position = selectedSlot.position;
         }
-        setSlots(newSlots);
-        clearState();
+        await editOrCreateSlot({
+          editMode,
+          newSlot,
+          playlistId: playlist.id,
+          slotToEditId: selectedSlot?.id,
+          selectedEntryId: selectedOption?.value,
+        });
+        const updatedSlots = await getSlotsByPlaylistId(playlist.id);
+        setSlots(updatedSlots);
+        clearSelectedState();
+      } catch (e) {
+        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+          console.log(e);
+        }
+        setErrorSnackbar(`Error ${editMode ? 'editing' : 'creating new'} slot.`);
       }
       handleDialogClose();
+    } else {
+      setErrorSnackbar('Cannot create or edit slot without a selected entry and option');
     }
   }
 
   const handleDeleteSlot = async (id: string) => {
-    const { errorMsg, data: newSlots } = await callApi({
-      method: 'DELETE',
-      path: `slots/${id}?return_all=true`,
-    });
-    if (errorMsg) {
-      setApiError(errorMsg);
-    } else if (!newSlots || !Array.isArray(newSlots) || newSlots.length !== slots.length - 1) {
-      setApiError('Unable to update slots after deletion.');
-    } else {
-      setSlots(newSlots);
+    try {
+      const newSlots = await deleteSlot(id);
+      if (!newSlots || !Array.isArray(newSlots) || newSlots.length !== slots.length - 1) {
+        throw new Error('Unable to update slots after deletion.');
+      } else {
+        setSlots(newSlots);
+      }
+    } catch (e) {
+      if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+        console.log(e);
+      }
+      setErrorSnackbar('Error deleting slot.');
     }
   }
 
   const playPlaylist = async () => {
-    const { errorMsg } = await playPlaylistInSpotify(callSpotifyApi, playlist.spotify_id);
-    if (errorMsg) {
-      console.log('Error playing playlist in Spotify', errorMsg);
+    try {
+      await playPlaylistInSpotify(callSpotifyApi, playlist.spotify_id);
+    } catch (e) {
+      if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+        console.log(e);
+      }
+      setErrorSnackbar('Error playing playlist.');
     }
   }
-
-  const EditSlotDialogContent = (
-    <EditSlot
-      createMode={!selectedSlot}
-      slotType={slotType}
-      selectedSlot={selectedSlot}
-      selectedOption={selectedOption}
-      setSlotType={setSlotType}
-      setSelectedEntry={setSelectedEntry}
-      setSelectedOption={setSelectedOption}
-    />
-  )
 
   useEffect(() => {
 
     async function getPlaylist() {
-      const { errorMsg, data } = await callApi({
-        method: 'GET',
-        path: `slots/by-playlist/${playlist.id}`
-      });
-      if (errorMsg) {
-        console.error(errorMsg);
-      } else {
-        setSlots(data.sort(({ position }: FullSlot, { position: position2 }: FullSlot) => position - position2));
+      try {
+        const slots = await getSlotsByPlaylistId(playlist.id);
+        setSlots(slots);
+      } catch (e) {
+        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+          console.log(e);
+        }
+        setErrorSnackbar('Error getting playlist.');
       }
     }
 

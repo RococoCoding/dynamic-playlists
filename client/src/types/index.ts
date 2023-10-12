@@ -48,11 +48,12 @@ export type SpotifyAlbumType = {
   artists: Array<SpotifyArtistType>;
 }
 
-export type SpotifyPlaylistsType = {
+export type SpotifyPlaylistType = {
   id: string;
   name: string;
   images: Array<{ url: string }>;
   owner: { display_name: string };
+  snapshot_id: string;
 }
 
 export type SpotifyTrackType = {
@@ -63,8 +64,19 @@ export type SpotifyTrackType = {
   uri: string;
 }
 
+export type SpotifyEntry = SpotifyArtistType | SpotifyAlbumType | SpotifyPlaylistType | SpotifyTrackType
 
-export type SpotifyEntry = SpotifyArtistType | SpotifyAlbumType | SpotifyPlaylistsType | SpotifyTrackType
+export type SpotifyUser = {
+  email: string;
+  display_name: string;
+  country: string;
+  explicit_content: {
+    filter_enabled: boolean;
+    filter_locked: boolean;
+  }
+  id: string;
+  images: Array<{ url: string }>;
+}
 
 export type SearchResultOption = {
   label: string;
@@ -79,3 +91,5 @@ export type PoolTrack = {
   spotify_track_id: string;
   spotify_artist_ids?: Array<string>;
 }
+
+export type SeverityLevel = 'success' | 'error' | 'warning' | 'info';

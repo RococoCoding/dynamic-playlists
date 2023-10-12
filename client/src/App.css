@@ -142,3 +142,7 @@ img {
     transform: translateX(-100%);
   }
 }
+.error-page {
+  text-align: center;
+  margin-top: 50px;
+}

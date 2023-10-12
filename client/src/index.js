@@ -5,6 +5,7 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { UserContextProvider } from './contexts/user';
+import { SnackbarContextProvider } from './contexts/snackbar';
 
 const theme = createTheme({
   palette: {
@@ -26,9 +27,11 @@ const theme = createTheme({
 ReactDOM.render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
-      <UserContextProvider>
-        <App />
-      </UserContextProvider>
+      <SnackbarContextProvider>
+        <UserContextProvider>
+          <App />
+        </UserContextProvider>
+      </SnackbarContextProvider>
     </ThemeProvider>
   </React.StrictMode>
   , document.getElementById('root'));

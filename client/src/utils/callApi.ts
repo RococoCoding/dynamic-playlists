@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { SERVER_BASE_URL } from '../constants';
-import { getErrorMessage, tokenExists } from '.';
+import { ENVIRONMENTS, SERVER_BASE_URL } from '../constants';
+import { tokenExists } from './tokens';
 
 type Props = {
   baseUrl?: string;
@@ -32,14 +32,14 @@ const callApi = async ({
   token,
   headers,
   signal,
-}: Props): Promise<any> => {
+}: Props): Promise<{ data: any }> => {
   try {
     const axiosInput: AxiosInput = {
-        method,
-        url: `${baseUrl || `${SERVER_BASE_URL}api/`}${path}`,
-        data,
-        ...(signal ? { signal } : {}),
-        ...(headers ? { headers } : {})
+      method,
+      url: `${baseUrl || `${SERVER_BASE_URL}api/`}${path}`,
+      data,
+      ...(signal ? { signal } : {}),
+      ...(headers ? { headers } : {})
     }
     if (tokenExists(token)) {
       axiosInput.headers = { ...axiosInput.headers, Authorization: `Bearer ${token}` }
@@ -48,16 +48,13 @@ const callApi = async ({
     if (res.data.error) {
       throw new Error(res.data.error?.message || res.data.error);
     }
-    return {
-      data: res.data,
-    };
+    return { data: res.data };
   } catch (error: any) {
-    const errorMsg = getErrorMessage(error);
-    console.log('callApi input: ', { baseUrl, method, path, data: JSON.stringify(data), token });
-    console.error('callApi error: ', errorMsg, error);
-    return {
-      errorMsg,
-    };
+    if (process.env.REACT_APP_ENVIRONMENT === ENVIRONMENTS.development) {
+      console.log('callApi input', { baseUrl, method, path, data: JSON.stringify(data), token });
+      console.error('callApi error', error);
+    }
+    throw error;
   }
 };
 

@@ -1,4 +1,4 @@
-import { SLOT_TYPES_MAP_BY_ID, SLOT_TYPES_MAP_BY_NAME, SLOT_TYPES_THAT_REQUIRE_ARTIST } from "../constants";
+import { ENVIRONMENTS, ERROR_ACTIONS, SLOT_TYPES_MAP_BY_ID, SLOT_TYPES_MAP_BY_NAME, SLOT_TYPES_THAT_REQUIRE_ARTIST } from "../constants";
 import { FullSlot, PoolTrack, SpotifyAlbumType } from "../types";
 import callApi from "./callApi";
 
@@ -9,21 +9,8 @@ export const requiresArtist = (type: keyof typeof SLOT_TYPES_MAP_BY_ID | keyof t
   return SLOT_TYPES_THAT_REQUIRE_ARTIST.includes(type);
 };  
 
-export const getToken = () => {
-  return localStorage.getItem('access_token');
-}
+export const getErrorMessage = (error: any) => error?.response?.data?.error?.message || error?.response?.data?.error || error?.message || error;
 
-export const setTokens = (accessToken: string, refreshToken: string) => {
-  if (!tokenExists(accessToken) && !tokenExists(refreshToken)) {
-    throw new Error(`Missing or invalid token: ${accessToken}, ${refreshToken}`);
-  }
-  localStorage.setItem('access_token', accessToken);
-  localStorage.setItem('refresh_token', refreshToken);
-}
-
-export const tokenExists = (token?: string | null) => !!token && token !== 'undefined';
-
-export const getErrorMessage = (error: any) => error?.response?.data?.error?.message || error?.response?.data?.error || error?.message;
 type PoolTrackWithName = PoolTrack & { name?: string };
 const pickRandomTrack = (pool: PoolTrackWithName[]) => {
   const randomIndex = Math.floor(Math.random() * pool.length);
@@ -37,10 +24,11 @@ const getAlbumTracks = async (spotifyId: string, callSpotifyApi: Function): Prom
     method: 'GET',
     path: `albums/${spotifyId}/tracks`,
   }
-  const { errorMsg, data } = await callSpotifyApi(input);
-  if (!errorMsg && data) {
+  const { data } = await callSpotifyApi(input);
+  if (data) {
     const tracks = data.items.map(({ id, name, artists }: SpotifyAlbumType) => ({
       // pool_id: poolId,
+      // includes name for console logs / convenience in debugging
       name,
       spotify_track_id: id,
       spotify_artist_ids: artists.map((artist: any) => artist.id)
@@ -54,8 +42,7 @@ const getAlbumTracks = async (spotifyId: string, callSpotifyApi: Function): Prom
     // });
     return tracks;
   } else {
-    console.log('Could not retrieve tracks from spotify', errorMsg)
-    console.log('callSpotifyApi input', input)
+    throw new Error('No tracks returned.')
   }
   // }
   // const input = {
@@ -81,7 +68,9 @@ export const getRandomTrack = async (slot: FullSlot, callSpotifyApi: Function) =
       break;
     case SLOT_TYPES_MAP_BY_NAME.album:
       if (!pool_id || !pool_spotify_id) {
-        console.log('Expected pool_id & pool_spotify_id for album slot')
+        if (process.env.REACT_APP_ENVIRONMENT === ENVIRONMENTS.development) {
+          console.log('Expected pool_id & pool_spotify_id for album slot')
+        }
         return;
       }
       // get album tracks
@@ -97,7 +86,9 @@ export const getRandomTrack = async (slot: FullSlot, callSpotifyApi: Function) =
       break;
     case SLOT_TYPES_MAP_BY_NAME.artist:
       if (!pool_id || !pool_spotify_id) {
-        console.log('Expected pool_id & pool_spotify_id for artist slot')
+        if (process.env.REACT_APP_ENVIRONMENT === ENVIRONMENTS.development) {
+          console.log('Expected pool_id & pool_spotify_id for artist slot')
+        }
         return;
       }
       // get artist albums
@@ -106,7 +97,9 @@ export const getRandomTrack = async (slot: FullSlot, callSpotifyApi: Function) =
         path: `artists/${pool_spotify_id}/albums`,
       });
       if (errorMsg) {
-        console.log('Error clearing playlist in Spotify', errorMsg);
+        if (process.env.REACT_APP_ENVIRONMENT === ENVIRONMENTS.development) {
+          console.log('Error clearing playlist in Spotify', errorMsg);
+        }
         return;
       }
       const { items } = data;
@@ -121,7 +114,11 @@ export const getRandomTrack = async (slot: FullSlot, callSpotifyApi: Function) =
         }
       }
       break;
-    default: console.log('Unexpected slot type', type);
+    default: {
+      if (process.env.REACT_APP_ENVIRONMENT === ENVIRONMENTS.development) {
+        console.log('Unexpected slot type', type); 
+      }
+    }
     // copilot just threw this in. Will check it later when I implement playlist support
     // case SLOT_TYPES_MAP_BY_NAME.playlist:
     //   // get playlist tracks
@@ -143,7 +140,9 @@ export const getRandomTrack = async (slot: FullSlot, callSpotifyApi: Function) =
     //       pool_id,
   }
   if (!spotifyId) {
-    console.log('No spotifyId added for slot: ', slotId, ' name: ', name);
+    if (process.env.REACT_APP_ENVIRONMENT === ENVIRONMENTS.development) {
+      console.log('No spotifyId added for slot: ', slotId, ' name: ', name);
+    }
   } else {
     await callApi({
       method: 'PUT',
@@ -157,83 +156,20 @@ export const getRandomTrack = async (slot: FullSlot, callSpotifyApi: Function) =
   }
 }
 
-export const getDpPlaylist = async (playlistId: string) => {
-  return callApi({
-    method: 'GET',
-    path: `playlists/by-spotify-id/${playlistId}`,
-  })
-}
+export const throwReauthError = (message: string) => {
+  const error: any = new Error(message);
+  error.action = ERROR_ACTIONS.reauth;
+  throw error;
+};
 
-export const getSpotifyPlaylist = async (playlistId: string, callSpotifyApi: Function) => {
+export const setWebPlayback = async (callSpotifyApi: Function, deviceId: string) => {
   return callSpotifyApi({
-    method: 'GET',
-    path: `playlists/${playlistId}`,
-  });
-}
-
-export const updateSlotWithNewTrack = async (slotId: string, trackId: string) => {
-  return callApi({
-    method: 'PUT',
-    path: `slots/${slotId}`,
     data: {
-      current_track: trackId,
-    }
-  });
-}
-
-export const updateSpotifyPlaylistWithNewTrack = async (
-  playlistId: string,
-  position: number,
-  uri: string,
-  callSpotifyApi: Function
-) => {
-  console.log('adding track to spotify playlist', {
-    data: {
-      uris: [uri],
-      position,
+      device_ids: [deviceId],
+      play: false
     },
-    method: "POST",
-    path: `playlists/${playlistId}/tracks`,
-  })
-  return callSpotifyApi({
-    data: {
-      uris: [uri],
-      position,
-    },
-    method: "POST",
-    path: `playlists/${playlistId}/tracks`,
+    method: "PUT",
+    path: "me/player",
   });
 }
 
-export const deleteTrackFromSpotifyPlaylist = async (
-  playlistId: string,
-  snapshotId: string,
-  callSpotifyApi: Function,
-  uri?: string,
-) => {
-  if (!uri) {
-    throw new Error('missing uri');
-  }
-  return callSpotifyApi({
-    data: {
-      tracks: [{ uri }],
-      snapshotId,
-    },
-    method: "DELETE",
-    path: `playlists/${playlistId}/tracks`,
-  });
-}
-
-export const playPlaylistInSpotify = async (callSpotifyApi: Function, playlistId?: string, ) => {
-  if (!playlistId) {
-    throw new Error('Missing Spotify playlistId');
-  }
-  return callSpotifyApi({
-      method: 'PUT',
-      path: `me/player/play`,
-      data: {
-        context_uri: `spotify:playlist:${playlistId}`,
-        position_ms: 0,
-      },
-    });
-}

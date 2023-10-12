@@ -1,8 +1,8 @@
-import { tokenExists } from ".";
+import { getErrorMessage, throwReauthError } from ".";
 import { SPOTIFY_BASE_URL } from "../constants";
 import callApi from "./callApi";
-import { redirect } from 'react-router-dom';
 import useRefreshToken from "./refreshToken";
+import { tokenExists } from "./tokens";
 
 
 type InputProps = {
@@ -32,52 +32,66 @@ const useSpotifyApi = () => {
   const refreshToken = localStorage.getItem('refresh_token');
   const { getNewToken } = useRefreshToken();
 
+  /**
+ * Note: Because this function is a hook, it needs to be passed into
+ * helper functions (non-component/non-hook fns) as a callback.
+ */
   const callSpotifyApi = async (
     input: InputProps,
     options: OptionProps = {},
-    ): Promise<any> => {
-    let path = input.path;
-
-    // option to convert data to query params
-    if (options.dataAsQueryParams) {
-      const params = new URLSearchParams(input.data);
-      path = `${path}?${params.toString()}`;
-    }
-    let res;
+  ): Promise<any | void> => {
     if (!options.skipToken && !tokenExists(accessToken) && !tokenExists(refreshToken)) {
-      console.log('no access or refresh token, redirecting to login');
-      redirect('/login');
+      throwReauthError('Missing tokens.');
     } else {
-      if (tokenExists(accessToken)) {
-        const callApiInput: Input = {
-          baseUrl: SPOTIFY_BASE_URL,
-          ...input,
-          path,
-        }
-        // skip token for authoriztion / initial token requests
-        if (!options.skipToken) {
-          callApiInput.token = accessToken as string;
-        }
-        res = await callApi(callApiInput);
+      let path = input.path;
+      // option to convert data to query params
+      if (options.dataAsQueryParams) {
+        const params = new URLSearchParams(input.data);
+        path = `${path}?${params.toString()}`;
       }
-      const accessTokenExpired = res.errorMsg && res.errorMsg.includes('expired');
-      if (!accessToken || accessTokenExpired) {
-        const newAccessToken = await getNewToken();
-        if (newAccessToken) {
-          return callApi({
-            baseUrl: SPOTIFY_BASE_URL,
-            ...input,
-            token: newAccessToken,
-            path,
-          })
-        } else {
-          return { errorMsg: 'Failed to refresh token' }
-        }
-      }
-      return res;
-    }
-  };
 
+      const callApiInput: Input = {
+        baseUrl: SPOTIFY_BASE_URL,
+        ...input,
+        path,
+      }
+
+      try {
+        // if we need token, add it to api input
+        if (!options.skipToken) {
+          if (tokenExists(accessToken)) {
+            callApiInput.token = accessToken as string;
+          } else {
+            // if no access token, but there is refresh token (we check if both are missing above)
+            // attempt getting new token with refresh token
+            const newAccessToken = await getNewToken();
+            if (newAccessToken) {
+              callApiInput.token = newAccessToken;
+            } else {
+              throwReauthError('Failed to refresh: missing access token.');
+            }
+          }
+        }
+
+        // Note: A return without /await/ won't hit the catch block
+        // return await callApi() is fine, but I'm going to declare the var so it's easier to throw in a console log when debugging
+        const res = await callApi(callApiInput);
+        return res;
+      } catch (e: any) {
+        const errorMessage = getErrorMessage(e);
+        if (errorMessage && typeof errorMessage === 'string' && errorMessage.includes('expired')) {
+          const newAccessToken = await getNewToken();
+          if (newAccessToken) {
+            callApiInput.token = newAccessToken;
+          } else {
+            throwReauthError('Failed to refresh: missing access token.');
+          }
+          return callApi(callApiInput);
+        }
+        throw e;
+      }
+    };
+  }
   return { callSpotifyApi };
 }
 

@@ -6,6 +6,7 @@ import styled from '@emotion/styled';
 import { AppBar, Typography, Toolbar } from '@mui/material';
 import RequestToken from './components/RequestToken';
 import Home from './components/Home';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
 
@@ -28,11 +29,13 @@ function App() {
           </HeaderText>
         </Toolbar>
       </Header>
-      <Routes>
-        <Route path="/auth/callback" element={<RequestToken />} />
-        <Route path="/home/:userid" element={<Home />} />
-        <Route path="/" element={<Landing />} />
-      </Routes>
+      <ErrorBoundary key='Webplayback'>
+        <Routes>
+          <Route path="/auth/callback" element={<RequestToken />} />
+          <Route path="/home/:userid" element={<Home />} />
+          <Route path="/" element={<Landing />} />
+        </Routes>
+      </ErrorBoundary>
     </Router>
   );
 }

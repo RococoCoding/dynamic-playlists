@@ -5,14 +5,18 @@ import { Typography, Container, Box, Paper, Button, DialogTitle, DialogContent }
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import { useParams } from 'react-router-dom';
-import callApi from '../utils/callApi';
 import TextInput from './forms/inputs/TextInput';
 import { PlaylistType } from '../types/index.js';
-import DisplayApiResponse from './presentational/DisplayApiReponse';
+import Snackbar from './presentational/Snackbar';
 import Playlist from './Playlist';
 import BaseDialog from './forms/BaseDialog';
 import { useUserContext } from '../contexts/user';
-import { getToken } from '../utils';
+import { getErrorMessage } from '../utils';
+import { useSnackbarContext } from '../contexts/snackbar';
+import { createDpPlaylist, getAllUserPlaylists } from '../utils/playlists/dp';
+import { getToken } from '../utils/tokens';
+import { ENVIRONMENTS } from '../constants';
+import ErrorBoundary from './ErrorBoundary';
 
 const MainContainer = styled(Container)({
   padding: '20px 0px 30px 0px'
@@ -80,25 +84,32 @@ function Home() {
   const [openCreatePlaylist, setOpenCreatePlaylist] = useState(false);
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
   const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistType>();
-  // TODO: move error handling to context for global snackbar?
-  const [apiError, setApiError] = useState('');
   const [playlists, setPlaylists] = useState<PlaylistType[]>([]);
   const { setUserIdContext } = useUserContext();
+  const {
+    clearSnackbar,
+    snackbarMessage,
+    severity,
+    setErrorSnackbar,
+  } = useSnackbarContext();
 
   const handleCreatePlaylist = async () => {
-    const { errorMsg, data } = await callApi({
-      method: 'POST',
-      path: 'playlists',
-      data: {
-        created_by: userId,
-        last_updated_by: userId,
-        title: newPlaylistTitle
+    if (userId) {
+      try {
+        const newPlaylist = await createDpPlaylist(newPlaylistTitle, userId);
+        if (!newPlaylist) {
+          throw new Error('No data returned from create playlist request.');
+        } else {
+          setSelectedPlaylist(newPlaylist);
+        }
+      } catch (e: any) {
+        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+          console.log('error creating playlist', e);
+        }
+        setErrorSnackbar('Error creating playlist.');
       }
-    });
-    if (errorMsg) {
-      setApiError(errorMsg);
     } else {
-      setSelectedPlaylist(data);
+      setErrorSnackbar('Cannot create playlist without a user id.')
     }
     handleDialogClose();
   };
@@ -114,7 +125,7 @@ function Home() {
   const setSelectedPlaylistById = (id: string) => {
     const selectedPlaylist = playlists.find(list => list.id === id)
     if (!selectedPlaylist) {
-      console.error(`Selected playlist id ${id} not found in playlists array.`);
+      setErrorSnackbar(`Selected playlist not found in playlists list.`);
     } else {
       setSelectedPlaylist(selectedPlaylist);
     }
@@ -135,15 +146,15 @@ function Home() {
 
   useEffect(() => {
     async function getPlaylists() {
-      const { errorMsg, data } = await callApi({
-        method: 'GET',
-        path: `playlists/by-user/${userId}`
-      });
-      if (errorMsg) {
-        console.error(errorMsg);
-      } else {
-        const sorted = sortPlaylistsByLastUpdated(data);
+      try {
+        const playlists = await getAllUserPlaylists(userId);
+        if (!playlists) {
+          throw new Error('No data returned from get playlists request.')
+        }
+        const sorted = sortPlaylistsByLastUpdated(playlists);
         setPlaylists(sorted);
+      } catch (e) {
+        setErrorSnackbar(getErrorMessage(e));
       }
     }
 
@@ -160,54 +171,62 @@ function Home() {
         <YourLibraryPaper>
           <div style={{ paddingBottom: '20%' }}>
           {!selectedPlaylist ?
-            <>
-              <ListHeader>
-                <YourLibraryTitle>Your Library</YourLibraryTitle>
-                <CreatePlaylistButton variant="contained" onClick={openCreatePlaylistForm}>
-                  <AddIcon />
-                </CreatePlaylistButton>
-              </ListHeader>
-              {playlists.map(playlist => {
-                const innerContent = <Typography variant="subtitle1" fontWeight="bold">{playlist.title}</Typography>;
-                return <ListItem
-                  key={playlist.id}
-                  id={playlist.id}
-                  innerContent={innerContent}
-                  onClick={setSelectedPlaylistById}
-                />
-              })}
-            </>
+              <ErrorBoundary key='All Playlists'>
+                <ListHeader>
+                  <YourLibraryTitle>Your Library</YourLibraryTitle>
+                  <CreatePlaylistButton variant="contained" onClick={openCreatePlaylistForm}>
+                    <AddIcon />
+                  </CreatePlaylistButton>
+                </ListHeader>
+                {playlists.map(playlist => {
+                  const innerContent = <Typography variant="subtitle1" fontWeight="bold">{playlist.title}</Typography>;
+                  return <ListItem
+                    key={playlist.id}
+                    id={playlist.id}
+                    innerContent={innerContent}
+                    onClick={setSelectedPlaylistById}
+                  />
+                })}
+              </ErrorBoundary>
             :
-            <Playlist
-              playlist={selectedPlaylist}
-              setApiError={setApiError}
-            />
+              <ErrorBoundary key='Selected Playlist'>
+                <Playlist
+                  playlist={selectedPlaylist}
+                />
+              </ErrorBoundary>
           }
           </div>
           {token &&
-            <WebPlaybackContainer>
-              <WebPlayback />
-            </WebPlaybackContainer>
+            <ErrorBoundary key='Webplayback'>
+              <WebPlaybackContainer>
+                <WebPlayback />
+              </WebPlaybackContainer>
+            </ErrorBoundary>
           }
         </YourLibraryPaper>
 
       </MainContainer>
       {
         openCreatePlaylist &&
-        <BaseDialog
-          dialogContent={CreateNewPlaylist}
-          handleDialogClose={handleDialogClose}
-          handleSubmit={handleCreatePlaylist}
-          isDialogOpen={openCreatePlaylist}
-          submitDisabled={!newPlaylistTitle}
-        />
+        <ErrorBoundary key='Create Playlist Dialog'>
+            <BaseDialog
+              dialogContent={CreateNewPlaylist}
+              handleDialogClose={handleDialogClose}
+              handleSubmit={handleCreatePlaylist}
+              isDialogOpen={openCreatePlaylist}
+              submitDisabled={!newPlaylistTitle}
+            />
+          </ErrorBoundary>
       }
       {
-        apiError &&
-        <DisplayApiResponse
-          closeSnackbar={() => setApiError('')}
-          error={apiError}
-        />
+        snackbarMessage &&
+        <ErrorBoundary key='Display Snackbar'>
+          <Snackbar
+            closeSnackbar={clearSnackbar}
+            message={snackbarMessage}
+            severity={severity}
+          />
+          </ErrorBoundary>
       }
     </main>
   );

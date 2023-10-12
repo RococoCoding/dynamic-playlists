@@ -3,6 +3,7 @@
 ### 🚧 Under Development 🚧
 <details>
 <summary>TODOs before release</summary>
+
 - Big
   - Testing
   - Spotify attributions & branding guidelines
@@ -47,6 +48,7 @@ Misc Todos:
 - submit feedback form
 - bugfix: handle key error when adding two of identical slots
 - figure out redirect using router-dom
+
 </details>
 
 ### Description

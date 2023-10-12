@@ -137,7 +137,7 @@ function Home() {
         if (process.env.NODE_ENV === ENVIRONMENTS.development) {
           console.log('error getting updated playlists after deleting playlist', e);
         }
-        setErrorSnackbar('Errro getting updated playlists after deleting playlist.');
+        setErrorSnackbar('Error getting updated playlists after deleting playlist.');
       }
     } catch (e: any) {
       if (process.env.NODE_ENV === ENVIRONMENTS.development) {

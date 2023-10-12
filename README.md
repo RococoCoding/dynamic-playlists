@@ -13,6 +13,7 @@
   - finish error boundaries
   - Support drag n drop for slot positioning
   - separate playlist route so refresh doesn't take you away to home + back button to home
+    - also refresh selected playlist after publishing for the first time so it doesn't create multiple new playlists
   - Styling on mobile (icons taking up too much space)
   - <details>
       <summary>bugfix: auto update positions when deleting slots</summary>
@@ -34,12 +35,12 @@
         ```
     </details>
 - Smol
-  - delete playlist
   - tooltips for buttons
   - Scrolling for longer playlists + remove scroll for playlist items
   - Play a specific track in a playlist
   - header nav
   - delete account
+  - Are you sure? on delete list / slot
 
 Misc Todos:
 - Refactor pools

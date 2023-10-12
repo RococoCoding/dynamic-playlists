@@ -46,6 +46,7 @@ export type SpotifyAlbumType = {
   id: string;
   name: string;
   artists: Array<SpotifyArtistType>;
+  album_group: string;
 }
 
 export type SpotifyPlaylistType = {

@@ -33,7 +33,7 @@ const authorizeSpotify = async () => {
   await generateCodeChallenge(codeVerifier).then(codeChallenge => {
     const state = generateRandomString(16);
     const scope = "streaming user-read-email user-modify-playback-state user-read-private playlist-modify-public";
-
+    console.log('setting code verifier', codeVerifier);
     localStorage.setItem('code_verifier', codeVerifier);
 
     let args = new URLSearchParams({

@@ -37,5 +37,5 @@ export const requestSpotifyTokens = async (callSpotifyApi: Function, code: strin
       'Content-Type': 'application/x-www-form-urlencoded'
     },
     data: body,
-  })
+  }, { skipToken: true })
 }

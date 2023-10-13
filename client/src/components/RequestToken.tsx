@@ -4,7 +4,6 @@ import { useUserContext } from "../contexts/user";
 import { requestSpotifyTokens, setTokens } from "../utils/tokens";
 import { getDpUser } from "../utils/users/dp";
 import { getSpotifyUser } from "../utils/users/spotify";
-import { getErrorMessage } from "../utils";
 import { ENVIRONMENTS, REACT_APP_ENV } from "../constants";
 
 // Callback function after user authorizes the DP app with Spotify.

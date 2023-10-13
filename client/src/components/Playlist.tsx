@@ -133,13 +133,13 @@ function Playlist() {
           if (process.env.NODE_ENV === ENVIRONMENTS.development) {
             console.log(e);
           }
-          setErrorSnackbar('Spotify playlist created, but error linking to DP selectedPlaylist.');
+          setErrorSnackbar('Spotify playlist created, but error linking to DP playlist.');
         }
       } catch (e) {
         if (process.env.NODE_ENV === ENVIRONMENTS.development) {
           console.log(e);
         }
-        setErrorSnackbar('Error creating new Spotify selectedPlaylist.');
+        setErrorSnackbar('Error creating new Spotify playlist.');
       }
     } else {
       // clear existing playlist in spotify
@@ -173,7 +173,7 @@ function Playlist() {
         if (process.env.NODE_ENV === ENVIRONMENTS.development) {
           console.log(e);
         }
-        setErrorSnackbar('Error populating Spotify selectedPlaylist.');
+        setErrorSnackbar('Error populating Spotify playlist.');
       }
     }
   }
@@ -261,7 +261,7 @@ function Playlist() {
       if (process.env.NODE_ENV === ENVIRONMENTS.development) {
         console.log(e);
       }
-      setErrorSnackbar('Error playing selectedPlaylist.');
+      setErrorSnackbar('Error playing selected playlist.');
     }
   }
 
@@ -282,7 +282,7 @@ function Playlist() {
         if (process.env.NODE_ENV === ENVIRONMENTS.development) {
           console.log(e);
         }
-        setErrorSnackbar('Error getting selectedPlaylist.');
+        setErrorSnackbar('Error getting selected playlist.');
       }
     }
     if (playlistId) {

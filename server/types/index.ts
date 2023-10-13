@@ -40,5 +40,5 @@ export interface PoolTrack {
 }
 
 export interface PlaylistWithSlots extends Playlist {
-  slots: Array<Slot>;
+  slots?: Array<Slot>;
 }

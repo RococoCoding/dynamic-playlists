@@ -80,8 +80,9 @@ const updatePlaylist = async (id: string, playlist: Partial<Omit<Playlist, 'id' 
   return playlistRow;
 };
 
-const deletePlaylist = async (id: string): Promise<void> => {
-  await pool.query('DELETE FROM playlist WHERE id = $1', [id]);
+const deletePlaylist = async (id: string): Promise<Playlist> => {
+  const { rows } = await pool.query('DELETE FROM playlist WHERE id = $1 RETURNING *', [id]);
+  return rows[0];
 };
 
 export {

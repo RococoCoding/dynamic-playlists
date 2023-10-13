@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Typography, Button } from '@mui/material';
+import { Typography, Button, Backdrop, CircularProgress } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -20,7 +20,7 @@ import { getRandomTrack, requiresArtist } from '../utils';
 import useSpotifyApi from '../utils/useSpotifyApi';
 import { useUserContext } from '../contexts/user';
 import { useSnackbarContext } from '../contexts/snackbar';
-import { linkSpotifyPlaylistToDpPlaylist } from '../utils/playlists/dp';
+import { getPlaylistWithSlots, linkSpotifyPlaylistToDpPlaylist } from '../utils/playlists/dp';
 import {
   publishSpotifyPlaylist,
   playPlaylistInSpotify,
@@ -28,6 +28,8 @@ import {
   populateSpotifyPlaylist
 } from '../utils/playlists/spotify';
 import { editOrCreateSlot, deleteSlot, getSlotsByPlaylistId } from '../utils/slots';
+import { useParams } from 'react-router-dom';
+import Page from './presentational/Page';
 
 const iconTypeMapping = {
   [SLOT_TYPES_MAP_BY_NAME.track]: <AudiotrackIcon />,
@@ -66,13 +68,9 @@ const SlotInnerContent = styled('div')({
   },
 });
 
-type Props = {
-  playlist: PlaylistType;
-}
-
-function Playlist({
-  playlist,
-}: Props) {
+function Playlist() {
+  const { playlistid: playlistId } = useParams();
+  const [playlist, setPlaylist] = useState<PlaylistType | null>(null);
   const [slots, setSlots] = useState<FullSlot[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<SpotifyEntry | null>(null);
   const [openEditSlotDialog, setOpenEditSlotDialog] = useState(false);
@@ -111,6 +109,10 @@ function Playlist({
   }
 
   const publishPlaylist = async () => {
+    if (!playlist) {
+      setErrorSnackbar('No selectedPlaylist to publish.');
+      return;
+    }
     let spotifyPlaylistId = playlist.spotify_id;
     // if playlist has never been published before, create new playlist in spotify
     // TODO: support descriptions
@@ -125,7 +127,8 @@ function Playlist({
         }
         try {
         // save spotify playlist id to playlist in dp db
-          await linkSpotifyPlaylistToDpPlaylist(playlist.id, spotifyPlaylistId, userId);
+          const updatedPlaylist = await linkSpotifyPlaylistToDpPlaylist(playlist.id, spotifyPlaylistId, userId);
+          setPlaylist(updatedPlaylist);
         } catch (e) {
           if (process.env.NODE_ENV === ENVIRONMENTS.development) {
             console.log(e);
@@ -190,6 +193,10 @@ function Playlist({
   }
 
   const handleEditSlotSubmit = async () => {
+    if (!playlist) {
+      setErrorSnackbar('No selected playlist to edit.');
+      return;
+    }
     if (selectedEntry && selectedOption?.value) {
       try {
         const newSlot: BaseSlot = {
@@ -244,75 +251,98 @@ function Playlist({
   }
 
   const playPlaylist = async () => {
+    if (!playlist) {
+      setErrorSnackbar('No selected playlist to play.');
+      return;
+    }
     try {
       await playPlaylistInSpotify(callSpotifyApi, playlist.spotify_id);
     } catch (e) {
       if (process.env.NODE_ENV === ENVIRONMENTS.development) {
         console.log(e);
       }
-      setErrorSnackbar('Error playing playlist.');
+      setErrorSnackbar('Error playing selected playlist.');
     }
   }
 
   useEffect(() => {
 
     async function getPlaylist() {
+      if (!playlistId) {
+        return;
+      }
       try {
-        const slots = await getSlotsByPlaylistId(playlist.id);
-        setSlots(slots);
+        const playlist = await getPlaylistWithSlots(playlistId);
+        if (!playlist) {
+          window.location.href = '/';
+        }
+        setPlaylist(playlist);
+        setSlots(playlist.slots || []);
       } catch (e) {
         if (process.env.NODE_ENV === ENVIRONMENTS.development) {
           console.log(e);
         }
-        setErrorSnackbar('Error getting playlist.');
+        setErrorSnackbar('Error getting selected playlist.');
       }
     }
+    if (playlistId) {
+      getPlaylist();
+    }
+  }, [playlistId]);
 
-    getPlaylist();
-
-  }, [playlist.id]);
+  if (!playlist) {
+    return (
+      <Backdrop
+        open={true}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
+    )
+  }
 
   return (
-    <>
-      <ListHeader>
-        <ListTitle>{playlist.title}</ListTitle>
-        <PlaylistActionsContainer>
-          <PlaylistActionButton variant="contained" onClick={playPlaylist}>
-            <PlayCircleIcon />
-          </PlaylistActionButton>
-          <PlaylistActionButton variant="contained" onClick={openCreateSlotForm}>
-            <AddIcon />
-          </PlaylistActionButton>
-          <PlaylistActionButton variant="contained" onClick={publishPlaylist}>
-            <PublishIcon />
-          </PlaylistActionButton>
-        </PlaylistActionsContainer>
-      </ListHeader>
-      {slots.map(slot => {
-        const label = slot.name + (requiresArtist(slot.type) && slot.artist_name?.length ? ' - ' + slot.artist_name.join(', ') : '')
-        const innerContent = (
-          <SlotInnerContent>
-            <div className="scroll-container" style={{ marginLeft: '10px', display: 'flex', alignItems: 'center', width: '80%', flexGrow: '1' }}>
-              <div className={label.length > 24 ? "scroll-content" : ""} style={{ fontSize: '1rem' }}>
-                {label}
+    <main>
+      <Page>
+        <ListHeader>
+          <ListTitle>{playlist.title}</ListTitle>
+          <PlaylistActionsContainer>
+            <PlaylistActionButton variant="contained" onClick={playPlaylist}>
+              <PlayCircleIcon />
+            </PlaylistActionButton>
+            <PlaylistActionButton variant="contained" onClick={openCreateSlotForm}>
+              <AddIcon />
+            </PlaylistActionButton>
+            <PlaylistActionButton variant="contained" onClick={publishPlaylist}>
+              <PublishIcon />
+            </PlaylistActionButton>
+          </PlaylistActionsContainer>
+        </ListHeader>
+        {slots.map(slot => {
+          const label = slot.name + (requiresArtist(slot.type) && slot.artist_name?.length ? ' - ' + slot.artist_name.join(', ') : '')
+          const innerContent = (
+            <SlotInnerContent>
+              <div className="scroll-container" style={{ marginLeft: '10px', display: 'flex', alignItems: 'center', width: '80%', flexGrow: '1' }}>
+                <div className={label.length > 24 ? "scroll-content" : ""} style={{ fontSize: '1rem' }}>
+                  {label}
+                </div>
               </div>
-            </div>
-            <div>
-              <DeleteIcon onClick={() => handleDeleteSlot(slot.id)} />
-              <EditIcon style={{ marginRight: '5px' }} onClick={() => selectSlotToEdit(slot.id)} />
-            </div>
-          </SlotInnerContent>
-        );
-        return (
-          <ListItem
-            key={slot.id}
-            id={slot.id}
-            icon={iconTypeMapping[slot.type]}
-            innerContent={innerContent}
-          />
-        )
-      })
-      }
+              <div>
+                <DeleteIcon onClick={() => handleDeleteSlot(slot.id)} />
+                <EditIcon style={{ marginRight: '5px' }} onClick={() => selectSlotToEdit(slot.id)} />
+              </div>
+            </SlotInnerContent>
+          );
+          return (
+            <ListItem
+              key={slot.id}
+              id={slot.id}
+              icon={iconTypeMapping[slot.type]}
+              innerContent={innerContent}
+            />
+          )
+        })
+        }
+      </Page>
       {
         openEditSlotDialog &&
         <BaseDialog
@@ -325,7 +355,7 @@ function Playlist({
           submitText={selectedSlot ? 'Edit' : 'Create'}
         />
       }
-    </>
+    </main>
   );
 }
 

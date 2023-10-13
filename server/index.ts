@@ -5,7 +5,7 @@ import cors from 'cors';
 import router from './routes/index.js';
 import { DATABASE_URL, DB_PASSWORD, DB_USER } from './constants/index.js';
 
-const port = 5000;
+const port = process.env.PORT || 5000;
 
 const app = express();
 app.set('appName', 'Dynamic Playlists');
@@ -28,6 +28,6 @@ export const pool = new Pool({
 });
 
 app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}`);
+  console.log(`Listening on port ${port}`);
 });
 

@@ -50,7 +50,7 @@ function RequestToken() {
         if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log('Error authenticating: ', e);
         }
-        setErrorMsg('Error authenticating with Spotify.');
+        setErrorMsg(`Error authenticating with Spotify. ${JSON.stringify(e)}`);
       }
     }
     fetchUser();

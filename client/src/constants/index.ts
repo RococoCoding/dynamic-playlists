@@ -1,3 +1,5 @@
+export const REACT_APP_ENV = process.env.REACT_APP_ENV;
+
 export const ENVIRONMENTS = {
   development: 'development',
   production: 'production',

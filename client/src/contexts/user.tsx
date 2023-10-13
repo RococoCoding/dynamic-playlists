@@ -6,6 +6,7 @@ import useSpotifyApi from '../utils/useSpotifyApi';
 import { tokenExists } from '../utils/tokens';
 import authorizeSpotify from '../utils/authorizeSpotify';
 import { getDpUser } from '../utils/users/dp';
+import { REACT_APP_ENV } from '../constants';
 
 interface Props {
   children: ReactNode
@@ -47,7 +48,7 @@ export const UserContextProvider = ({ children }: Props) => {
           }
         }
       } catch (e: any) {
-        if (process.env.NODE_ENV === 'development') {
+        if (REACT_APP_ENV === 'development') {
           console.log('error getting spotify user', e);
         }
         await authorizeSpotify();

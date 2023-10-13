@@ -12,7 +12,7 @@ import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 import ListItem from './presentational/ListItem';
-import { ENVIRONMENTS, SLOT_TYPES_MAP_BY_ID, SLOT_TYPES_MAP_BY_NAME } from '../constants';
+import { ENVIRONMENTS, REACT_APP_ENV, SLOT_TYPES_MAP_BY_ID, SLOT_TYPES_MAP_BY_NAME } from '../constants';
 import { BaseSlot, FullSlot, PlaylistType, SearchResultOption, SpotifyEntry } from '../types/index.js';
 import BaseDialog from './forms/BaseDialog';
 import EditSlot from './forms/EditSlot';
@@ -130,13 +130,13 @@ function Playlist() {
           const updatedPlaylist = await linkSpotifyPlaylistToDpPlaylist(playlist.id, spotifyPlaylistId, userId);
           setPlaylist(updatedPlaylist);
         } catch (e) {
-          if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+          if (REACT_APP_ENV === ENVIRONMENTS.development) {
             console.log(e);
           }
           setErrorSnackbar('Spotify playlist created, but error linking to DP playlist.');
         }
       } catch (e) {
-        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+        if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log(e);
         }
         setErrorSnackbar('Error creating new Spotify playlist.');
@@ -170,7 +170,7 @@ function Playlist() {
           setInfoSnackbar(`Playlist published with skipped slots: ${skippedTracks.join('\n')}`);
         }
       } catch (e) {
-        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+        if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log(e);
         }
         setErrorSnackbar('Error populating Spotify playlist.');
@@ -223,7 +223,7 @@ function Playlist() {
         setSlots(updatedSlots);
         clearSelectedState();
       } catch (e) {
-        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+        if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log(e);
         }
         setErrorSnackbar(`Error ${editMode ? 'editing' : 'creating new'} slot.`);
@@ -243,7 +243,7 @@ function Playlist() {
         setSlots(newSlots);
       }
     } catch (e) {
-      if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+      if (REACT_APP_ENV === ENVIRONMENTS.development) {
         console.log(e);
       }
       setErrorSnackbar('Error deleting slot.');
@@ -258,7 +258,7 @@ function Playlist() {
     try {
       await playPlaylistInSpotify(callSpotifyApi, playlist.spotify_id);
     } catch (e) {
-      if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+      if (REACT_APP_ENV === ENVIRONMENTS.development) {
         console.log(e);
       }
       setErrorSnackbar('Error playing selected playlist.');
@@ -279,7 +279,7 @@ function Playlist() {
         setPlaylist(playlist);
         setSlots(playlist.slots || []);
       } catch (e) {
-        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+        if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log(e);
         }
         setErrorSnackbar('Error getting selected playlist.');

@@ -1,6 +1,6 @@
 import { useUserContext } from "../contexts/user";
 import authorizeSpotify from "../utils/authorizeSpotify";
-import { ENVIRONMENTS } from "../constants";
+import { ENVIRONMENTS, REACT_APP_ENV } from "../constants";
 import { useSnackbarContext } from "../contexts/snackbar";
 
 function Login() {
@@ -15,7 +15,7 @@ function Login() {
         await authorizeSpotify();
       }
     } catch (e: any) {
-      if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+      if (REACT_APP_ENV === ENVIRONMENTS.development) {
         console.log('Error logging in: ', e);
       }
       setErrorSnackbar('Error logging in. Please refresh the page and try again.');

@@ -14,7 +14,7 @@ import { useUserContext } from '../contexts/user';
 import { useSnackbarContext } from '../contexts/snackbar';
 import { createDpPlaylist, deleteDpPlaylist, getAllUserPlaylists } from '../utils/playlists/dp';
 import { getToken } from '../utils/tokens';
-import { ENVIRONMENTS } from '../constants';
+import { ENVIRONMENTS, REACT_APP_ENV } from '../constants';
 import ErrorBoundary from './ErrorBoundary';
 import Page from './presentational/Page';
 
@@ -89,7 +89,7 @@ function Home() {
           setPlaylists(sorted);
         }
       } catch (e: any) {
-        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+        if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log('error creating playlist', e);
         }
         setErrorSnackbar('Error creating playlist.');
@@ -110,7 +110,7 @@ function Home() {
         setPlaylists(sorted);
       }
     } catch (e: any) {
-      if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+      if (REACT_APP_ENV === ENVIRONMENTS.development) {
         console.log('error deleting playlist', e);
       }
       setErrorSnackbar('Error deleting playlist.');
@@ -155,7 +155,7 @@ function Home() {
           setPlaylists(sorted);
         }
       } catch (e) {
-        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+        if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log('error getting playlists', e);
         }
         setErrorSnackbar('Error getting playlists.');

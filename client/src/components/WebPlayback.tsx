@@ -10,7 +10,7 @@ import useRefreshToken from '../utils/refreshToken';
 import useSpotifyApi from '../utils/useSpotifyApi';
 import { getErrorMessage, getRandomTrack, setWebPlayback } from '../utils';
 import { FullSlot, SpotifyTrackType } from '../types';
-import { ENVIRONMENTS, ERROR_ACTIONS, SLOT_TYPES, SLOT_TYPES_MAP_BY_NAME } from '../constants';
+import { ENVIRONMENTS, ERROR_ACTIONS, REACT_APP_ENV, SLOT_TYPES, SLOT_TYPES_MAP_BY_NAME } from '../constants';
 import { getDpPlaylistBySpotifyId } from '../utils/playlists/dp';
 import { updateSpotifyPlaylistWithNewTrack, getSpotifyPlaylist, deleteTrackFromSpotifyPlaylist } from '../utils/playlists/spotify';
 import { updateSlotWithNewTrack } from '../utils/slots';
@@ -116,19 +116,19 @@ function WebPlayback() {
           });
 
           player.addListener('not_ready', ({ device_id }) => {
-            if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+            if (REACT_APP_ENV === ENVIRONMENTS.development) {
               console.log('Device ID has gone offline', device_id);
             }
           });
 
           player.addListener('initialization_error', ({ message }) => {
-            if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+            if (REACT_APP_ENV === ENVIRONMENTS.development) {
               console.log('initialization_error: ', message);
             }
           });
 
           player.addListener('authentication_error', async ({ message }) => {
-            if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+            if (REACT_APP_ENV === ENVIRONMENTS.development) {
               console.log('authentication_error:', message);
             }
             // check if this is trying to refresh too many times because of listener / async issues
@@ -136,14 +136,14 @@ function WebPlayback() {
             if (tokenExists(token) && retryRefreshTokenCount < 2) {
               retryRefreshTokenCount++;
               countInside++;
-              if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+              if (REACT_APP_ENV === ENVIRONMENTS.development) {
                 console.log('retrying refresh token', retryRefreshTokenCount, countInside);
               }
               try {
                 const newToken = await getNewToken();
                 setToken(newToken || null);
               } catch (e) {
-                if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+                if (REACT_APP_ENV === ENVIRONMENTS.development) {
                   console.log('error refreshing token', e);
                 }
               }
@@ -151,14 +151,14 @@ function WebPlayback() {
           });
 
           player.addListener('playback_error', ({ message }) => {
-            if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+            if (REACT_APP_ENV === ENVIRONMENTS.development) {
               console.log('playback_error:', message);
             }
           });
 
           player.addListener('account_error', ({ message }) => {
             // TODO: display error messages to user if useful
-            if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+            if (REACT_APP_ENV === ENVIRONMENTS.development) {
               console.log('account_error: ', message);
             }
           });
@@ -244,7 +244,7 @@ function WebPlayback() {
                 }
                 snapshotId = spotifyPlaylist.snapshot_id;
               } catch (e) {
-                if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+                if (REACT_APP_ENV === ENVIRONMENTS.development) {
                   console.log('error getting spotify playlist', e);
                 }
                 throw new Error(`getting spotify playlist error: ${getErrorMessage(e)}`);
@@ -254,7 +254,7 @@ function WebPlayback() {
               try {
                 await deleteTrackFromSpotifyPlaylist(spotifyPlaylistId, snapshotId, callSpotifyApi, prevTrack.uri);
               } catch (e) {
-                if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+                if (REACT_APP_ENV === ENVIRONMENTS.development) {
                   console.log('error deleting previous track', e);
                 }
                 throw new Error(`deleting previous track error: ${getErrorMessage(e)}`);
@@ -268,7 +268,7 @@ function WebPlayback() {
         dynamicallyUpdatePlaylist();
       }
     } catch (e: any) {
-      if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+      if (REACT_APP_ENV === ENVIRONMENTS.development) {
         console.log('error dynamically updating playlist', e);
       }
       if (e.next === ERROR_ACTIONS.republish) {

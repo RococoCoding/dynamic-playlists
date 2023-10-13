@@ -1,17 +1,22 @@
 import { Router, Request, Response } from 'express';
 import { getPlaylistById, getPlaylistsByUserId, createPlaylist, updatePlaylist, deletePlaylist, getPlaylistBySpotifyId } from '../../../services/playlist/index.js';
-import { Playlist } from '../../../types/index.js';
+import { Playlist, PlaylistWithSlots } from '../../../types/index.js';
+import { getSlotsByPlaylistId } from '../../../services/slot/index.js';
 
 const playlistsRouter = Router();
 
 // Get a playlist by ID
 playlistsRouter.get('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
+  const { include } = req.query;
 
   try {
-    const playlist = await getPlaylistById(id);
+    const playlist: PlaylistWithSlots | null = await getPlaylistById(id);
     if (!playlist) {
       return res.status(404).send('Playlist not found');
+    }
+    if (include === 'slots') {
+      playlist.slots = await getSlotsByPlaylistId(id);
     }
     return res.status(200).send(playlist);
   } catch (err: any) {
@@ -47,9 +52,14 @@ playlistsRouter.get('/by-spotify-id/:spotifyId', async (req: Request, res: Respo
 // Create a new playlist
 playlistsRouter.post('/', async (req: Request, res: Response) => {
   const playlist: Omit<Playlist, 'id' | 'created_at' | 'last_updated'> = req.body;
+  const { return_all } = req.query;
 
   try {
     const newPlaylist = await createPlaylist(playlist);
+    if (return_all) {
+      const userPlaylists = await getPlaylistsByUserId(playlist.created_by);
+      return res.status(201).send(userPlaylists);
+    }
     return res.status(201).send(newPlaylist);
   } catch (err: any) {
     const errMsg = err?.message || err;
@@ -77,9 +87,14 @@ playlistsRouter.put('/:id', async (req: Request, res: Response) => {
 // Delete a playlist by ID
 playlistsRouter.delete('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
+  const { return_all } = req.query;
 
   try {
-    await deletePlaylist(id);
+    const deletedPlaylist = await deletePlaylist(id);
+    if (return_all) {
+      const userPlaylists = await getPlaylistsByUserId(deletedPlaylist.created_by);
+      return res.status(200).send(userPlaylists);
+    }
     return res.status(200).send('Playlist deleted');
   } catch (err: any) {
     const errMsg = err?.message || err;

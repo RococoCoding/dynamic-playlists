@@ -1,4 +1,4 @@
-import { Box, Card } from '@mui/material';
+import { Box, Card, CardActions } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 const ListItemCard = styled(Card)({
@@ -22,6 +22,7 @@ const StyledIconBox = styled(Box)({
 });
 
 type Props = {
+  actions?: Array<JSX.Element>;
   id: string;
   icon?: JSX.Element;
   innerContent: JSX.Element;
@@ -29,14 +30,15 @@ type Props = {
 }
 
 function ListItem({
+  actions,
   id,
   icon,
   innerContent,
   onClick
 }: Props) {
   return (
-    <ListItemCard onClick={() => onClick && onClick(id)}>
-      <StyledCardContent style={{ flexGrow: '1' }}>
+    <ListItemCard>
+      <StyledCardContent style={{ flexGrow: '1' }} onClick={() => onClick && onClick(id)}>
         {icon &&
           <StyledIconBox>
             {icon}
@@ -44,7 +46,10 @@ function ListItem({
         }
         {innerContent}
       </StyledCardContent>
-    </ListItemCard>
+      <CardActions>
+        {actions}
+      </CardActions>
+    </ListItemCard >
   );
 }
 

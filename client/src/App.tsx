@@ -7,6 +7,7 @@ import { AppBar, Typography, Toolbar } from '@mui/material';
 import RequestToken from './components/RequestToken';
 import Home from './components/Home';
 import ErrorBoundary from './components/ErrorBoundary';
+import Playlist from './components/Playlist';
 
 function App() {
 
@@ -32,6 +33,7 @@ function App() {
       <ErrorBoundary key='Webplayback'>
         <Routes>
           <Route path="/auth/callback" element={<RequestToken />} />
+          <Route path="/playlist/:playlistid" element={<Playlist />} />
           <Route path="/home/:userid" element={<Home />} />
           <Route path="/" element={<Landing />} />
         </Routes>

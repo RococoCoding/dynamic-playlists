@@ -8,10 +8,12 @@ function Login() {
   const { setErrorSnackbar } = useSnackbarContext();
 
   const startLogin = async () => {
+    console.log('starting login')
     try {
       if (userId) {
         window.location.href = '/home/' + userId;
       } else {
+        console.log('authorizing spotify');
         await authorizeSpotify();
       }
     } catch (e: any) {

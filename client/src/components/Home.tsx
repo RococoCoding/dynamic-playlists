@@ -149,9 +149,9 @@ function Home() {
   useEffect(() => {
     const getPlaylists = async () => {
       try {
-        const playlists = await getAllUserPlaylists(userId);
-        if (playlists && playlists.length) {
-          const sorted = sortPlaylistsByLastUpdated(playlists);
+        const userPlaylists = await getAllUserPlaylists(userId);
+        if (userPlaylists && userPlaylists.length) {
+          const sorted = sortPlaylistsByLastUpdated(userPlaylists);
           setPlaylists(sorted);
         }
       } catch (e) {

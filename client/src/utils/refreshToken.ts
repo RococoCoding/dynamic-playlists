@@ -1,4 +1,4 @@
-import { ENVIRONMENTS } from "../constants";
+import { ENVIRONMENTS, REACT_APP_ENV } from "../constants";
 import callApi from "./callApi";
 import { setTokens } from "./tokens";
 
@@ -6,7 +6,7 @@ const useRefreshToken = () => {
   const refreshToken = localStorage.getItem('refresh_token');
 
   const getNewToken = async (): Promise<string | void> => {
-    if (process.env.REACT_APP_ENVIRONMENT === ENVIRONMENTS.development) {
+    if (REACT_APP_ENV === ENVIRONMENTS.development) {
       console.log('refreshing token', refreshToken)
     }
     try {

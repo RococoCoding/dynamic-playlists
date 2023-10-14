@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ENVIRONMENTS, SERVER_BASE_URL } from '../constants';
+import { ENVIRONMENTS, REACT_APP_ENV, SERVER_BASE_URL } from '../constants';
 import { tokenExists } from './tokens';
 
 type Props = {
@@ -50,7 +50,7 @@ const callApi = async ({
     }
     return { data: res.data };
   } catch (error: any) {
-    if (process.env.REACT_APP_ENVIRONMENT === ENVIRONMENTS.development) {
+    if (REACT_APP_ENV === ENVIRONMENTS.development) {
       console.log('callApi input', { baseUrl, method, path, data: JSON.stringify(data), token });
       console.error('callApi error', error);
     }

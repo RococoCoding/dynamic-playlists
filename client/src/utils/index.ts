@@ -9,7 +9,7 @@ export const requiresArtist = (type: keyof typeof SLOT_TYPES_MAP_BY_ID | keyof t
   return SLOT_TYPES_THAT_REQUIRE_ARTIST.includes(type);
 };  
 
-export const getErrorMessage = (error: any) => error?.response?.data?.error?.message || error?.response?.data?.error || error?.message || error;
+export const getErrorMessage = (error: any) => error?.response?.data?.error?.message || error?.response?.data?.error_description || error?.response?.data?.error || error?.message || error;
 
 type PoolTrackWithName = PoolTrack & { name?: string };
 const pickRandomTrack = (pool: PoolTrackWithName[]) => {

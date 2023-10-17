@@ -19,12 +19,9 @@ function RequestToken() {
     const fetchUser = async () => {
       try {
         // get access & refresh tokens
-        console.log('getting token')
         const { data } = await requestSpotifyTokens(callSpotifyApi, code);
-        console.log('data after fetch', data);
         if (data) {
           try {
-            console.log('setting tokens')
             setTokens(data.access_token, data.refresh_token);
           } catch {
             setErrorMsg(`Error: Could not set tokens. ${JSON.stringify(data)}`);
@@ -34,7 +31,6 @@ function RequestToken() {
           throw new Error('No tokens received.');
         }
         // get spotify profile with user id
-        console.log('getting spotify user');
         const { id: spotifyUserId } = (await getSpotifyUser(callSpotifyApi)) || {};
         // get / upsert dp user
         if (spotifyUserId) {
@@ -46,7 +42,6 @@ function RequestToken() {
           }
         }
       } catch (e: any) {
-        console.log('Error authenticating: ', e);
         if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log('Error authenticating: ', e);
         }
@@ -54,7 +49,9 @@ function RequestToken() {
       }
     }
     fetchUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
+
   return (
     <div>
       {errorMsg}

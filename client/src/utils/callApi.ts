@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { ENVIRONMENTS, REACT_APP_ENV, SERVER_BASE_URL } from '../constants';
 import { tokenExists } from './tokens';
+import { getErrorMessage } from '.';
 
 type Props = {
   baseUrl?: string;
@@ -52,7 +53,7 @@ const callApi = async ({
   } catch (error: any) {
     if (REACT_APP_ENV === ENVIRONMENTS.development) {
       console.log('callApi input', { baseUrl, method, path, data: JSON.stringify(data), token });
-      console.error('callApi error', error);
+      console.error('callApi error', getErrorMessage(error), error);
     }
     throw error;
   }

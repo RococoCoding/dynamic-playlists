@@ -13,7 +13,6 @@ function Login() {
   const { setUserIdContext } = useUserContext();
 
   const startLogin = async () => {
-    console.log('starting login')
     try {
       if (userId) {
         window.location.href = '/home/' + userId;
@@ -26,6 +25,7 @@ function Login() {
             const dpUser = await getDpUser(spotifyUserId);
             if (dpUser) {
               setUserIdContext(spotifyUserId);
+              window.location.href = '/home/' + spotifyUserId;
             } else {
               throw new Error(`Matching Dp user does not exist for Spotify user ${spotifyUserId}`);
             }

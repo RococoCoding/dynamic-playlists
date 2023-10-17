@@ -9,18 +9,17 @@ import Home from './components/Home';
 import ErrorBoundary from './components/ErrorBoundary';
 import Playlist from './components/Playlist';
 
+const Header = styled(AppBar)({
+  backgroundColor: '#1DB954',
+})
+
+const HeaderText = styled(Typography)({
+  fontWeight: 'bold',
+  textAlign: 'center',
+  flexGrow: 1
+});
+
 function App() {
-
-  const Header = styled(AppBar)({
-    backgroundColor: '#1DB954',
-  })
-
-  const HeaderText = styled(Typography)({
-    fontWeight: 'bold',
-    textAlign: 'center',
-    flexGrow: 1
-  });
-
   return (
     <Router>
       <Header position="static">
@@ -30,11 +29,12 @@ function App() {
           </HeaderText>
         </Toolbar>
       </Header>
-      <ErrorBoundary key='Webplayback'>
+      <ErrorBoundary key='pages'>
         <Routes>
           <Route path="/auth/callback" element={<RequestToken />} />
-          <Route path="/playlist/:playlistid" element={<Playlist />} />
-          <Route path="/home/:userid" element={<Home />} />
+          <Route path="/home/:userid/*" element={<Home />} >
+            <Route path="playlist/:playlistid" element={<Playlist />} />
+          </Route>
           <Route path="/" element={<Landing />} />
         </Routes>
       </ErrorBoundary>

@@ -5,6 +5,7 @@ import { requestSpotifyTokens, setTokens } from "../utils/tokens";
 import { getDpUser } from "../utils/users/dp";
 import { getSpotifyUser } from "../utils/users/spotify";
 import { ENVIRONMENTS, REACT_APP_ENV } from "../constants";
+import { useNavigate } from "react-router-dom";
 
 // Callback function after user authorizes the DP app with Spotify.
 // Retrieves access & refresh tokens and fetches the user.
@@ -12,6 +13,7 @@ function RequestToken() {
   const [errorMsg, setErrorMsg] = useState<string>('');
   const { callSpotifyApi } = useSpotifyApi();
   const { setUserIdContext } = useUserContext();
+  const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   let code = urlParams.get('code');
 
@@ -37,8 +39,7 @@ function RequestToken() {
           const newDpUser = await getDpUser(spotifyUserId);
           if (newDpUser) {
             setUserIdContext(newDpUser.id);
-            // @ts-expect-error
-            window.location = `/home/${newDpUser.id}`;
+            navigate(`/home/${newDpUser.id}`);
           }
         }
       } catch (e: any) {

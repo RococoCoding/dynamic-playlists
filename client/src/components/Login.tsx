@@ -1,21 +1,23 @@
 import { useUserContext } from "../contexts/user";
-import authorizeSpotify from "../utils/authorizeSpotify";
 import { ENVIRONMENTS, REACT_APP_ENV } from "../constants";
 import { useSnackbarContext } from "../contexts/snackbar";
 import { getDpUser } from "../utils/users/dp";
 import { getSpotifyUser } from "../utils/users/spotify";
 import useSpotifyApi from "../utils/useSpotifyApi";
+import { useNavigate } from "react-router-dom";
+import getAuthorizeSpotifyArgs from "../utils/authorizeSpotify";
 
 function Login() {
   const { userId } = useUserContext();
   const { setErrorSnackbar } = useSnackbarContext();
   const { callSpotifyApi } = useSpotifyApi();
   const { setUserIdContext } = useUserContext();
+  const navigate = useNavigate();
 
   const startLogin = async () => {
     try {
       if (userId) {
-        window.location.href = '/home/' + userId;
+        navigate('/home/' + userId);
       } else {
         try {
           const spotifyUser = await getSpotifyUser(callSpotifyApi);
@@ -25,7 +27,7 @@ function Login() {
             const dpUser = await getDpUser(spotifyUserId);
             if (dpUser) {
               setUserIdContext(spotifyUserId);
-              window.location.href = '/home/' + spotifyUserId;
+              navigate('/home/' + spotifyUserId);
             } else {
               throw new Error(`Matching Dp user does not exist for Spotify user ${spotifyUserId}`);
             }
@@ -34,7 +36,8 @@ function Login() {
           if (REACT_APP_ENV === 'development') {
             console.log('error getting spotify user', e);
           }
-          await authorizeSpotify();
+          const args = await getAuthorizeSpotifyArgs();
+          navigate('https://accounts.spotify.com/authorize?' + args)
         }
       }
     } catch (e: any) {

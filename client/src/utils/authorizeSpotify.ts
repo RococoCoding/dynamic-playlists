@@ -29,7 +29,7 @@ async function generateCodeChallenge(codeVerifier: string) {
   return base64encode(digest);
 }
 let codeVerifier = generateRandomString(128);
-const authorizeSpotify = async () => {
+const getAuthorizeSpotifyArgs = async () => {
   await generateCodeChallenge(codeVerifier).then(codeChallenge => {
     const state = generateRandomString(16);
     const scope = "streaming user-read-email user-modify-playback-state user-read-private playlist-modify-public";
@@ -44,9 +44,9 @@ const authorizeSpotify = async () => {
       code_challenge_method: 'S256',
       code_challenge: codeChallenge
     });
-    // @ts-expect-error
-    window.location = 'https://accounts.spotify.com/authorize?' + args;
+
+    return args;
   });
 };
 
-export default authorizeSpotify;
+export default getAuthorizeSpotifyArgs;

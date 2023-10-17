@@ -2,7 +2,7 @@
 
 ### 🚧 Under Development 🚧
 <details>
-<summary>TODOs before release</summary>
+<summary>TODOs</summary>
 
 - Big
   - Testing
@@ -13,6 +13,7 @@
   - finish error boundaries
   - Support drag n drop for slot positioning
   - Styling on mobile (icons taking up too much space)
+  - bugfix: handle key error when adding two of identical slots
   - <details>
       <summary>bugfix: auto update positions when deleting slots</summary>
         copilot spit this out, investigate it  
@@ -32,6 +33,7 @@
           EXECUTE FUNCTION update_slot_positions();
         ```
     </details>
+  - add import playlist
 - Smol
   - tooltips for buttons
   - Scrolling for longer playlists + remove scroll for playlist items
@@ -40,13 +42,19 @@
   - delete account
   - Are you sure? on delete list / slot
 
-Misc Todos:
+Follow-up Todos:
+- Figure out a better solution for getting out of sync with spotify version of the playlist?
 - Refactor pools
 - add switch to web playback button
-- shuffle
+- shuffle & loop controls
+- delete spotify playlist
 - submit feedback form
-- bugfix: handle key error when adding two of identical slots
-- figure out redirect using router-dom
+- bugifx: "The value provided to Autocomplete is invalid. None of the options match..." error & odd behavior
+- Filters for artist/album/playlist pools
+  - exclude compliation albums (default)
+  - exclude live/best of albums
+  - custom filters (remove songs from pool individually -- gotta think through how this works with updating pools)
+- webplayback progress bar for position in song
 
 </details>
 

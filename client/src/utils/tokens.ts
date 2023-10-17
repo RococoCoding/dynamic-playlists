@@ -24,7 +24,6 @@ export const requestSpotifyTokens = async (callSpotifyApi: Function, code: strin
   const redirectUri = process.env.REACT_APP_SPOTIFY_REDIRECT_URI;
 
   let codeVerifier = localStorage.getItem('code_verifier');
-  console.log('getting code verifier from local storage', codeVerifier);
   const bodyObject = {
     grant_type: 'authorization_code',
     code: code,

@@ -31,7 +31,6 @@ import {
 import { editOrCreateSlot, deleteSlot, getSlotsByPlaylistId } from '../utils/slots';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import Page from './presentational/Page';
-import { ArrowBack } from '@mui/icons-material';
 
 const iconTypeMapping = {
   [SLOT_TYPES_MAP_BY_NAME.track]: <AudiotrackIcon />,

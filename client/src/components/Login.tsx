@@ -37,7 +37,7 @@ function Login() {
             console.log('error getting spotify user', e);
           }
           const args = await getAuthorizeSpotifyArgs();
-          navigate('https://accounts.spotify.com/authorize?' + args)
+          window.location.href = 'https://accounts.spotify.com/authorize?' + args;
         }
       }
     } catch (e: any) {

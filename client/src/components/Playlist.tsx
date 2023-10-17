@@ -80,7 +80,8 @@ function Playlist() {
   const editMode = !!selectedSlot;
   const { userId } = useUserContext();
   const { callSpotifyApi } = useSpotifyApi();
-  const { setErrorSnackbar, setInfoSnackbar } = useSnackbarContext();
+  const snackbarContext = useSnackbarContext();
+  const { setErrorSnackbar, setInfoSnackbar } = snackbarContext;
 
   const EditSlotDialogContent = (
     <EditSlot
@@ -274,7 +275,7 @@ function Playlist() {
       try {
         const playlist = await getPlaylistWithSlots(playlistId);
         if (!playlist) {
-          window.location.href = '/';
+          window.location.href = `/home/${userId}`;
         }
         setPlaylist(playlist);
         setSlots(playlist.slots || []);
@@ -282,13 +283,13 @@ function Playlist() {
         if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log(e);
         }
-        setErrorSnackbar('Error getting selected playlist.');
+        snackbarContext.setErrorSnackbar('Error getting selected playlist.');
       }
     }
     if (playlistId) {
       getPlaylist();
     }
-  }, [playlistId]);
+  }, [playlistId, userId, snackbarContext]);
 
   if (!playlist) {
     return (

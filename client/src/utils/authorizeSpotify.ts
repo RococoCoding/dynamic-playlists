@@ -17,15 +17,15 @@ async function generateCodeChallenge(codeVerifier: string) {
   function base64encode(string: ArrayBuffer) {
     // @ts-expect-error
     return btoa(String.fromCharCode.apply(null, new Uint8Array(string)))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
   }
-
+  
   const encoder = new TextEncoder();
   const data = encoder.encode(codeVerifier);
   const digest = await window.crypto.subtle.digest('SHA-256', data);
-
+  
   return base64encode(digest);
 }
 let codeVerifier = generateRandomString(128);
@@ -33,7 +33,6 @@ const authorizeSpotify = async () => {
   await generateCodeChallenge(codeVerifier).then(codeChallenge => {
     const state = generateRandomString(16);
     const scope = "streaming user-read-email user-modify-playback-state user-read-private playlist-modify-public";
-
     localStorage.setItem('code_verifier', codeVerifier);
 
     let args = new URLSearchParams({

@@ -2,7 +2,7 @@ import { getErrorMessage, throwReauthError } from ".";
 import { SPOTIFY_BASE_URL } from "../constants";
 import callApi from "./callApi";
 import useRefreshToken from "./refreshToken";
-import { tokenExists } from "./tokens";
+import { getAccessToken, getRefreshToken, tokenExists } from "./tokens";
 
 
 type InputProps = {
@@ -28,8 +28,6 @@ type Input = {
 }
 
 const useSpotifyApi = () => {
-  const accessToken = localStorage.getItem('access_token');
-  const refreshToken = localStorage.getItem('refresh_token');
   const { getNewToken } = useRefreshToken();
 
   /**
@@ -40,6 +38,8 @@ const useSpotifyApi = () => {
     input: InputProps,
     options: OptionProps = {},
   ): Promise<any | void> => {
+    const accessToken = getAccessToken();
+    const refreshToken = getRefreshToken();
     if (!options.skipToken && !tokenExists(accessToken) && !tokenExists(refreshToken)) {
       throwReauthError('Missing tokens.');
     } else {

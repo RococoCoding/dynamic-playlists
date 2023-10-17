@@ -1,3 +1,5 @@
+export const REACT_APP_ENV = process.env.REACT_APP_ENV;
+
 export const ENVIRONMENTS = {
   development: 'development',
   production: 'production',
@@ -10,7 +12,7 @@ export const ERROR_ACTIONS = {
 
 export const SPOTIFY_BASE_URL = 'https://api.spotify.com/v1/';
 
-export const SERVER_BASE_URL = 'http://localhost:5000/';
+export const SERVER_BASE_URL = process.env.REACT_APP_SERVER_BASE_URL;
 
 export const SLOT_TYPES = {
   track: 'track',

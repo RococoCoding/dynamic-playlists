@@ -1,4 +1,4 @@
-import { ENVIRONMENTS, ERROR_ACTIONS, SLOT_TYPES_MAP_BY_ID, SLOT_TYPES_MAP_BY_NAME, SLOT_TYPES_THAT_REQUIRE_ARTIST } from "../constants";
+import { ENVIRONMENTS, ERROR_ACTIONS, REACT_APP_ENV, SLOT_TYPES_MAP_BY_ID, SLOT_TYPES_MAP_BY_NAME, SLOT_TYPES_THAT_REQUIRE_ARTIST } from "../constants";
 import { FullSlot, PoolTrack, SpotifyAlbumType } from "../types";
 import callApi from "./callApi";
 
@@ -9,7 +9,7 @@ export const requiresArtist = (type: keyof typeof SLOT_TYPES_MAP_BY_ID | keyof t
   return SLOT_TYPES_THAT_REQUIRE_ARTIST.includes(type);
 };  
 
-export const getErrorMessage = (error: any) => error?.response?.data?.error?.message || error?.response?.data?.error || error?.message || error;
+export const getErrorMessage = (error: any) => error?.response?.data?.error?.message || error?.response?.data?.error_description || error?.response?.data?.error || error?.message || error;
 
 type PoolTrackWithName = PoolTrack & { name?: string };
 const pickRandomTrack = (pool: PoolTrackWithName[]) => {
@@ -68,7 +68,7 @@ export const getRandomTrack = async (slot: FullSlot, callSpotifyApi: Function) =
       break;
     case SLOT_TYPES_MAP_BY_NAME.album:
       if (!pool_id || !pool_spotify_id) {
-        if (process.env.REACT_APP_ENVIRONMENT === ENVIRONMENTS.development) {
+        if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log('Expected pool_id & pool_spotify_id for album slot')
         }
         return;
@@ -86,7 +86,7 @@ export const getRandomTrack = async (slot: FullSlot, callSpotifyApi: Function) =
       break;
     case SLOT_TYPES_MAP_BY_NAME.artist:
       if (!pool_id || !pool_spotify_id) {
-        if (process.env.REACT_APP_ENVIRONMENT === ENVIRONMENTS.development) {
+        if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log('Expected pool_id & pool_spotify_id for artist slot')
         }
         return;
@@ -97,7 +97,7 @@ export const getRandomTrack = async (slot: FullSlot, callSpotifyApi: Function) =
         path: `artists/${pool_spotify_id}/albums`,
       });
       if (errorMsg) {
-        if (process.env.REACT_APP_ENVIRONMENT === ENVIRONMENTS.development) {
+        if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log('Error clearing playlist in Spotify', errorMsg);
         }
         return;
@@ -119,7 +119,7 @@ export const getRandomTrack = async (slot: FullSlot, callSpotifyApi: Function) =
       }
       break;
     default: {
-      if (process.env.REACT_APP_ENVIRONMENT === ENVIRONMENTS.development) {
+      if (REACT_APP_ENV === ENVIRONMENTS.development) {
         console.log('Unexpected slot type', type); 
       }
     }
@@ -144,7 +144,7 @@ export const getRandomTrack = async (slot: FullSlot, callSpotifyApi: Function) =
     //       pool_id,
   }
   if (!spotifyId) {
-    if (process.env.REACT_APP_ENVIRONMENT === ENVIRONMENTS.development) {
+    if (REACT_APP_ENV === ENVIRONMENTS.development) {
       console.log('No spotifyId added for slot: ', slotId, ' name: ', name);
     }
   } else {

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import ListItem from './presentational/ListItem';
-import WebPlayback from './WebPlayback';
 import { Typography, Box, Button, DialogTitle, DialogContent } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
@@ -13,10 +12,12 @@ import BaseDialog from './forms/BaseDialog';
 import { useUserContext } from '../contexts/user';
 import { useSnackbarContext } from '../contexts/snackbar';
 import { createDpPlaylist, deleteDpPlaylist, getAllUserPlaylists } from '../utils/playlists/dp';
-import { getToken } from '../utils/tokens';
-import { ENVIRONMENTS } from '../constants';
+import { getAccessToken } from '../utils/tokens';
+import { ENVIRONMENTS, REACT_APP_ENV } from '../constants';
 import ErrorBoundary from './ErrorBoundary';
 import Page from './presentational/Page';
+import WebPlayback from './WebPlayback';
+import Playlist from './Playlist';
 
 const ListHeader = styled('div')({
   display: 'flex',
@@ -65,11 +66,12 @@ const sortPlaylistsByLastUpdated = (playlists: PlaylistType[]) => {
 }
 
 function Home() {
-  const { userid: userId } = useParams();
-  const token = getToken();
+  const { userid: userId, playlistid: playlistId } = useParams();
+  const token = getAccessToken();
   const [openCreatePlaylist, setOpenCreatePlaylist] = useState(false);
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
   const [playlists, setPlaylists] = useState<PlaylistType[]>([]);
+  const [openPlaylist, setOpenPlaylist] = useState(!!playlistId);
   const { setUserIdContext } = useUserContext();
   const {
     clearSnackbar,
@@ -89,7 +91,7 @@ function Home() {
           setPlaylists(sorted);
         }
       } catch (e: any) {
-        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+        if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log('error creating playlist', e);
         }
         setErrorSnackbar('Error creating playlist.');
@@ -110,7 +112,7 @@ function Home() {
         setPlaylists(sorted);
       }
     } catch (e: any) {
-      if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+      if (REACT_APP_ENV === ENVIRONMENTS.development) {
         console.log('error deleting playlist', e);
       }
       setErrorSnackbar('Error deleting playlist.');
@@ -129,7 +131,8 @@ function Home() {
     if (!id) {
       setErrorSnackbar(`Error selecting playlist.`);
     } else {
-      window.location.href = `/playlist/${id}`;
+      setOpenPlaylist(true);
+      window.location.href = `/home/${userId}/playlist/${id}`;
     }
   }
 
@@ -149,13 +152,13 @@ function Home() {
   useEffect(() => {
     const getPlaylists = async () => {
       try {
-        const playlists = await getAllUserPlaylists(userId);
-        if (playlists && playlists.length) {
-          const sorted = sortPlaylistsByLastUpdated(playlists);
+        const userPlaylists = await getAllUserPlaylists(userId);
+        if (userPlaylists && userPlaylists.length) {
+          const sorted = sortPlaylistsByLastUpdated(userPlaylists);
           setPlaylists(sorted);
         }
       } catch (e) {
-        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+        if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log('error getting playlists', e);
         }
         setErrorSnackbar('Error getting playlists.');
@@ -174,37 +177,43 @@ function Home() {
       <Page>
         <div style={{ paddingBottom: '20%' }}>
           <ErrorBoundary key='All Playlists'>
-            <ListHeader>
-              <YourLibraryTitle>Your Library</YourLibraryTitle>
-              <CreatePlaylistButton variant="contained" onClick={openCreatePlaylistForm}>
-                <AddIcon />
-              </CreatePlaylistButton>
-            </ListHeader>
-            {playlists.map(playlist => {
-              const innerContent =
-                <ListItemInnerContent>
-                  <Typography variant="subtitle1" fontWeight="bold">{playlist.title}</Typography>
-                </ListItemInnerContent>
-              const deleteAction = <DeleteIcon onClick={() => handleDeletePlaylist(playlist.id)} />;
-              const actions = [deleteAction];
-              return <ListItem
-                key={playlist.id}
-                id={playlist.id}
-                innerContent={innerContent}
-                actions={actions}
-                onClick={setSelectedPlaylistById}
-              />
-            })}
+            {openPlaylist ?
+              <Playlist />
+              :
+              <>
+                <ListHeader>
+                  <YourLibraryTitle>Your Library</YourLibraryTitle>
+                  <CreatePlaylistButton variant="contained" onClick={openCreatePlaylistForm}>
+                    <AddIcon />
+                  </CreatePlaylistButton>
+                </ListHeader>
+                {playlists.map(playlist => {
+                  const innerContent =
+                    <ListItemInnerContent>
+                      <Typography variant="subtitle1" fontWeight="bold">{playlist.title}</Typography>
+                    </ListItemInnerContent>
+                  const deleteAction = <DeleteIcon key={`delete list ${playlist.id}`} onClick={() => handleDeletePlaylist(playlist.id)} />;
+                  const actions = [deleteAction];
+                  return <ListItem
+                    key={playlist.id}
+                    id={playlist.id}
+                    innerContent={innerContent}
+                    actions={actions}
+                    onClick={setSelectedPlaylistById}
+                  />
+                })}
+              </>
+            }
           </ErrorBoundary>
         </div>
-        {token &&
-          <ErrorBoundary key='Webplayback'>
-            <WebPlaybackContainer>
-              <WebPlayback />
-            </WebPlaybackContainer>
-          </ErrorBoundary>
-        }
       </Page>
+      {token &&
+        <ErrorBoundary key='Webplayback'>
+          <WebPlaybackContainer>
+            <WebPlayback />
+          </WebPlaybackContainer>
+        </ErrorBoundary>
+      }
       {
         openCreatePlaylist &&
         <ErrorBoundary key='Create Playlist Dialog'>
@@ -224,7 +233,7 @@ function Home() {
             closeSnackbar={clearSnackbar}
             message={snackbarMessage}
             severity={severity}
-          />
+            />
           </ErrorBoundary>
       }
     </main>

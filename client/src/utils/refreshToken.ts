@@ -1,14 +1,9 @@
-import { ENVIRONMENTS } from "../constants";
 import callApi from "./callApi";
-import { setTokens } from "./tokens";
+import { getRefreshToken, setTokens } from "./tokens";
 
 const useRefreshToken = () => {
-  const refreshToken = localStorage.getItem('refresh_token');
-
   const getNewToken = async (): Promise<string | void> => {
-    if (process.env.REACT_APP_ENVIRONMENT === ENVIRONMENTS.development) {
-      console.log('refreshing token', refreshToken)
-    }
+    const refreshToken = getRefreshToken();
     try {
       const { data } = await callApi({
         method: 'POST',
@@ -23,16 +18,10 @@ const useRefreshToken = () => {
           'Content-Type': 'application/x-www-form-urlencoded'
         }
       });
-      const { access_token, refresh_token } = data;
+      const { access_token: newAccessToken, refresh_token: newRefreshToken } = data;
       try {
-        const oldAccessToken = localStorage.getItem('access_token');
-        console.log('old / new refresh token', refreshToken, refresh_token);
-        console.log('old / new access token', oldAccessToken, access_token);
-        setTokens(access_token, refresh_token);
-        const newSavedAccessToken = localStorage.getItem('access_token');
-        const newSavedRefreshToken = localStorage.getItem('refresh_token');
-        console.log('new saved tokens. acccess / refresh', newSavedAccessToken, newSavedRefreshToken);
-        return access_token;
+        setTokens(newAccessToken, newRefreshToken);
+        return newAccessToken;
       } catch (e: any) {
         throw new Error(`Error setting tokens: ${e.message || e}`);
       }

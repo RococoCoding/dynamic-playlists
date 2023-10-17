@@ -4,8 +4,7 @@ import { useUserContext } from "../contexts/user";
 import { requestSpotifyTokens, setTokens } from "../utils/tokens";
 import { getDpUser } from "../utils/users/dp";
 import { getSpotifyUser } from "../utils/users/spotify";
-import { getErrorMessage } from "../utils";
-import { ENVIRONMENTS } from "../constants";
+import { ENVIRONMENTS, REACT_APP_ENV } from "../constants";
 
 // Callback function after user authorizes the DP app with Spotify.
 // Retrieves access & refresh tokens and fetches the user.
@@ -43,14 +42,16 @@ function RequestToken() {
           }
         }
       } catch (e: any) {
-        if (process.env.NODE_ENV === ENVIRONMENTS.development) {
+        if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log('Error authenticating: ', e);
         }
-        setErrorMsg('Error authenticating with Spotify.');
+        setErrorMsg(`Error authenticating with Spotify.`);
       }
     }
     fetchUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
+
   return (
     <div>
       {errorMsg}

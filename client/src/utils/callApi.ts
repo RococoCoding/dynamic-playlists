@@ -52,7 +52,7 @@ const callApi = async ({
     return { data: res.data };
   } catch (error: any) {
     if (REACT_APP_ENV === ENVIRONMENTS.development) {
-      console.log('callApi input', { baseUrl, method, path, data: JSON.stringify(data), token });
+      console.log('callApi input', { baseUrl, method, path, data, token });
       console.error('callApi error', getErrorMessage(error), error);
     }
     throw error;

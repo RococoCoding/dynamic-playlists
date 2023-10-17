@@ -14,7 +14,7 @@ import { ENVIRONMENTS, ERROR_ACTIONS, REACT_APP_ENV, SLOT_TYPES, SLOT_TYPES_MAP_
 import { getDpPlaylistBySpotifyId } from '../utils/playlists/dp';
 import { updateSpotifyPlaylistWithNewTrack, getSpotifyPlaylist, deleteTrackFromSpotifyPlaylist } from '../utils/playlists/spotify';
 import { updateSlotWithNewTrack } from '../utils/slots';
-import { tokenExists } from '../utils/tokens';
+import { getToken, tokenExists } from '../utils/tokens';
 import { useSnackbarContext } from '../contexts/snackbar';
 
 const PlayerCard = styled(Card)({
@@ -76,18 +76,18 @@ const PlayerControls = styled('div')({
   display: 'flex',
 });
 
-let retryRefreshTokenCount = 0;
+type SpotifyCallback = (token: string) => void;
 
 function WebPlayback() {
   const [isPaused, setPaused] = useState<null | boolean>();
   const [instanceIsActive, setInstanceActive] = useState<null | boolean>();
   const [player, setPlayer] = useState<undefined | Spotify.Player>(undefined);
   const [componentCurrentTrack, setComponentTrack] = useState<SpotifyTrackType | null>(null);
-  const [token, setToken] = useState<string | null | undefined>(localStorage.getItem('access_token'));
-  const { getNewToken } = useRefreshToken();
+  const refreshToken = useRefreshToken();
   const { callSpotifyApi } = useSpotifyApi();
   const [playerState, setPlayerState] = useState<null | Spotify.PlaybackState>(null);
-  const { setErrorSnackbar } = useSnackbarContext();
+  const snackbarContext = useSnackbarContext();
+  const token = getToken();
 
   // setup web playback sdk, add listeners to player
   useEffect(() => {
@@ -99,10 +99,26 @@ function WebPlayback() {
     if (tokenExists(token)) {
       const startPlayer = async () => {
         window.onSpotifyWebPlaybackSDKReady = () => {
-
           const player = new window.Spotify.Player({
-            name: 'Dynamic Playlists - Spotify Web Playback SDK',
-            getOAuthToken: cb => { cb(token as string); },
+            name: `Dynamic Playlists - Spotify Web Playback SDK`,
+            getOAuthToken: async (cb: SpotifyCallback) => {
+              // retrieve a new token
+              try {
+                const newToken = await refreshToken.getNewToken()
+                if (newToken) {
+                  // set new token in webplayer
+                  cb(newToken);
+                } else {
+                  if (REACT_APP_ENV === ENVIRONMENTS.development) {
+                    console.log('Could not retrieve new token in webplayer getOAuthToken');
+                  }
+                }
+              } catch (e) {
+                if (REACT_APP_ENV === ENVIRONMENTS.development) {
+                  console.log('Error retrieving new token in webplayer getOAuthToken: ', getErrorMessage(e), e);
+                }
+              }
+            },
             volume: 0.5
           });
           setPlayer(player);
@@ -121,45 +137,28 @@ function WebPlayback() {
             }
           });
 
-          player.addListener('initialization_error', ({ message }) => {
+          player.addListener('initialization_error', (state) => {
             if (REACT_APP_ENV === ENVIRONMENTS.development) {
-              console.log('initialization_error: ', message);
+              console.log('initialization_error: ', state);
             }
           });
 
-          player.addListener('authentication_error', async ({ message }) => {
+          player.addListener('authentication_error', async (state) => {
             if (REACT_APP_ENV === ENVIRONMENTS.development) {
-              console.log('authentication_error:', message);
-            }
-            // check if this is trying to refresh too many times because of listener / async issues
-            let countInside = 0;
-            if (tokenExists(token) && retryRefreshTokenCount < 2) {
-              retryRefreshTokenCount++;
-              countInside++;
-              if (REACT_APP_ENV === ENVIRONMENTS.development) {
-                console.log('retrying refresh token', retryRefreshTokenCount, countInside);
-              }
-              try {
-                const newToken = await getNewToken();
-                setToken(newToken || null);
-              } catch (e) {
-                if (REACT_APP_ENV === ENVIRONMENTS.development) {
-                  console.log('error refreshing token', e);
-                }
-              }
+              console.log('authentication_error:', state);
             }
           });
 
-          player.addListener('playback_error', ({ message }) => {
+          player.addListener('playback_error', async (state) => {
             if (REACT_APP_ENV === ENVIRONMENTS.development) {
-              console.log('playback_error:', message);
+              console.log('playback_error:', state);
             }
           });
 
-          player.addListener('account_error', ({ message }) => {
+          player.addListener('account_error', (state) => {
             // TODO: display error messages to user if useful
             if (REACT_APP_ENV === ENVIRONMENTS.development) {
-              console.log('account_error: ', message);
+              console.log('account_error: ', state);
             }
           });
 
@@ -183,7 +182,8 @@ function WebPlayback() {
     } else {
       console.log('Cannot start webplayback without token');
     }
-  }, [token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- call once on mount
+  }, []);
 
   // handle state changes & dynamic updates when playerState changes
   useEffect(() => {
@@ -272,15 +272,16 @@ function WebPlayback() {
         console.log('error dynamically updating playlist', e);
       }
       if (e.next === ERROR_ACTIONS.republish) {
-        // TODO: Figure out a better solution for getting out of sync with spotify version of the playlist
-        setErrorSnackbar('Error during playlist update. Please republish the playlist to re-sync with Spotify.');
+        snackbarContext.setErrorSnackbar('Error during playlist update. Please republish the playlist to re-sync with Spotify.');
       } else {
-        setErrorSnackbar('Could not update playlist.');
+        snackbarContext.setErrorSnackbar('Could not update playlist.');
       }
     }
     // update component with new track
     setComponentTrack(playerCurrentTrack);
-  }, [playerState]);
+    // TODO: figure out how to handle this situation better to avoid dependency array issues
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerState, snackbarContext.setErrorSnackbar]);
 
   if (!instanceIsActive) {
     return (

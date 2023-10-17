@@ -3,12 +3,8 @@ import callApi from "./callApi";
 import { setTokens } from "./tokens";
 
 const useRefreshToken = () => {
-  const refreshToken = localStorage.getItem('refresh_token');
-
   const getNewToken = async (): Promise<string | void> => {
-    if (REACT_APP_ENV === ENVIRONMENTS.development) {
-      console.log('refreshing token', refreshToken)
-    }
+    const refreshToken = localStorage.getItem('refresh_token');
     try {
       const { data } = await callApi({
         method: 'POST',
@@ -26,12 +22,11 @@ const useRefreshToken = () => {
       const { access_token, refresh_token } = data;
       try {
         const oldAccessToken = localStorage.getItem('access_token');
-        console.log('old / new refresh token', refreshToken, refresh_token);
-        console.log('old / new access token', oldAccessToken, access_token);
+        if (REACT_APP_ENV === ENVIRONMENTS.development) {
+          console.log(`refresh token: \n  old: ${refreshToken} \n\n  new: ${refresh_token}`);
+          console.log(`access token: \n  old: ${oldAccessToken} \n\n  new: ${access_token}`);
+        }
         setTokens(access_token, refresh_token);
-        const newSavedAccessToken = localStorage.getItem('access_token');
-        const newSavedRefreshToken = localStorage.getItem('refresh_token');
-        console.log('new saved tokens. acccess / refresh', newSavedAccessToken, newSavedRefreshToken);
         return access_token;
       } catch (e: any) {
         throw new Error(`Error setting tokens: ${e.message || e}`);

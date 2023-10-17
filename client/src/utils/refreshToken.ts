@@ -1,10 +1,9 @@
-import { ENVIRONMENTS, REACT_APP_ENV } from "../constants";
 import callApi from "./callApi";
-import { setTokens } from "./tokens";
+import { getRefreshToken, setTokens } from "./tokens";
 
 const useRefreshToken = () => {
   const getNewToken = async (): Promise<string | void> => {
-    const refreshToken = localStorage.getItem('refresh_token');
+    const refreshToken = getRefreshToken();
     try {
       const { data } = await callApi({
         method: 'POST',
@@ -19,15 +18,10 @@ const useRefreshToken = () => {
           'Content-Type': 'application/x-www-form-urlencoded'
         }
       });
-      const { access_token, refresh_token } = data;
+      const { access_token: newAccessToken, refresh_token: newRefreshToken } = data;
       try {
-        const oldAccessToken = localStorage.getItem('access_token');
-        if (REACT_APP_ENV === ENVIRONMENTS.development) {
-          console.log(`refresh token: \n  old: ${refreshToken} \n\n  new: ${refresh_token}`);
-          console.log(`access token: \n  old: ${oldAccessToken} \n\n  new: ${access_token}`);
-        }
-        setTokens(access_token, refresh_token);
-        return access_token;
+        setTokens(newAccessToken, newRefreshToken);
+        return newAccessToken;
       } catch (e: any) {
         throw new Error(`Error setting tokens: ${e.message || e}`);
       }

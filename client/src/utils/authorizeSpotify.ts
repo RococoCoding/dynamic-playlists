@@ -26,16 +26,13 @@ async function generateCodeChallenge(codeVerifier: string) {
   const data = encoder.encode(codeVerifier);
   const digest = await window.crypto.subtle.digest('SHA-256', data);
   
-  console.log('generating code challenge');
   return base64encode(digest);
 }
 let codeVerifier = generateRandomString(128);
 const authorizeSpotify = async () => {
-  console.log('inside authorizing spotify');
   await generateCodeChallenge(codeVerifier).then(codeChallenge => {
     const state = generateRandomString(16);
     const scope = "streaming user-read-email user-modify-playback-state user-read-private playlist-modify-public";
-    console.log('setting code verifier', codeVerifier);
     localStorage.setItem('code_verifier', codeVerifier);
 
     let args = new URLSearchParams({

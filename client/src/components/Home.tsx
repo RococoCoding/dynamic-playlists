@@ -12,7 +12,7 @@ import BaseDialog from './forms/BaseDialog';
 import { useUserContext } from '../contexts/user';
 import { useSnackbarContext } from '../contexts/snackbar';
 import { createDpPlaylist, deleteDpPlaylist, getAllUserPlaylists } from '../utils/playlists/dp';
-import { getToken } from '../utils/tokens';
+import { getAccessToken } from '../utils/tokens';
 import { ENVIRONMENTS, REACT_APP_ENV } from '../constants';
 import ErrorBoundary from './ErrorBoundary';
 import Page from './presentational/Page';
@@ -67,7 +67,7 @@ const sortPlaylistsByLastUpdated = (playlists: PlaylistType[]) => {
 
 function Home() {
   const { userid: userId, playlistid: playlistId } = useParams();
-  const token = getToken();
+  const token = getAccessToken();
   const [openCreatePlaylist, setOpenCreatePlaylist] = useState(false);
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
   const [playlists, setPlaylists] = useState<PlaylistType[]>([]);

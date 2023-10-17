@@ -14,7 +14,7 @@ import { ENVIRONMENTS, ERROR_ACTIONS, REACT_APP_ENV, SLOT_TYPES, SLOT_TYPES_MAP_
 import { getDpPlaylistBySpotifyId } from '../utils/playlists/dp';
 import { updateSpotifyPlaylistWithNewTrack, getSpotifyPlaylist, deleteTrackFromSpotifyPlaylist } from '../utils/playlists/spotify';
 import { updateSlotWithNewTrack } from '../utils/slots';
-import { getToken, tokenExists } from '../utils/tokens';
+import { getAccessToken, tokenExists } from '../utils/tokens';
 import { useSnackbarContext } from '../contexts/snackbar';
 
 const PlayerCard = styled(Card)({
@@ -87,7 +87,7 @@ function WebPlayback() {
   const { callSpotifyApi } = useSpotifyApi();
   const [playerState, setPlayerState] = useState<null | Spotify.PlaybackState>(null);
   const snackbarContext = useSnackbarContext();
-  const token = getToken();
+  const token = getAccessToken();
 
   // setup web playback sdk, add listeners to player
   useEffect(() => {

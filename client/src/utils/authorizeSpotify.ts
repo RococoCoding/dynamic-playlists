@@ -29,13 +29,13 @@ async function generateCodeChallenge(codeVerifier: string) {
   return base64encode(digest);
 }
 let codeVerifier = generateRandomString(128);
-const authorizeSpotify = async () => {
-  await generateCodeChallenge(codeVerifier).then(codeChallenge => {
+const getAuthorizeSpotifyArgs = async () => {
+  const args = await generateCodeChallenge(codeVerifier).then(codeChallenge => {
     const state = generateRandomString(16);
     const scope = "streaming user-read-email user-modify-playback-state user-read-private playlist-modify-public";
     localStorage.setItem('code_verifier', codeVerifier);
 
-    let args = new URLSearchParams({
+    let params = new URLSearchParams({
       response_type: 'code',
       client_id: clientId,
       scope: scope,
@@ -44,9 +44,9 @@ const authorizeSpotify = async () => {
       code_challenge_method: 'S256',
       code_challenge: codeChallenge
     });
-    // @ts-expect-error
-    window.location = 'https://accounts.spotify.com/authorize?' + args;
+    return params;
   });
+  return args
 };
 
-export default authorizeSpotify;
+export default getAuthorizeSpotifyArgs;

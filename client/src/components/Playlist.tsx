@@ -10,6 +10,7 @@ import QueueMusicIcon from '@mui/icons-material/QueueMusic';
 import PublishIcon from '@mui/icons-material/Publish';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import ListItem from './presentational/ListItem';
 import { ENVIRONMENTS, REACT_APP_ENV, SLOT_TYPES_MAP_BY_ID, SLOT_TYPES_MAP_BY_NAME } from '../constants';
@@ -28,7 +29,7 @@ import {
   populateSpotifyPlaylist
 } from '../utils/playlists/spotify';
 import { editOrCreateSlot, deleteSlot, getSlotsByPlaylistId } from '../utils/slots';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import Page from './presentational/Page';
 
 const iconTypeMapping = {
@@ -67,7 +68,6 @@ const SlotInnerContent = styled('div')({
     width: '87%',
   },
 });
-
 function Playlist() {
   const { playlistid: playlistId } = useParams();
   const [playlist, setPlaylist] = useState<PlaylistType | null>(null);
@@ -82,6 +82,8 @@ function Playlist() {
   const { callSpotifyApi } = useSpotifyApi();
   const snackbarContext = useSnackbarContext();
   const { setErrorSnackbar, setInfoSnackbar } = snackbarContext;
+  const navigate = useNavigate();
+  const [closePlaylist] = useOutletContext() as [() => void];
 
   const EditSlotDialogContent = (
     <EditSlot
@@ -275,7 +277,7 @@ function Playlist() {
       try {
         const playlist = await getPlaylistWithSlots(playlistId);
         if (!playlist) {
-          window.location.href = `/home/${userId}`;
+          navigate(`/home/${userId}`);
         }
         setPlaylist(playlist);
         setSlots(playlist.slots || []);
@@ -289,7 +291,7 @@ function Playlist() {
     if (playlistId) {
       getPlaylist();
     }
-  }, [playlistId, userId, snackbarContext]);
+  }, [playlistId, userId, navigate, snackbarContext]);
 
   if (!playlist) {
     return (
@@ -304,6 +306,7 @@ function Playlist() {
   return (
     <main>
       <Page>
+        <ArrowBackIcon onClick={closePlaylist} />
         <ListHeader>
           <ListTitle>{playlist.title}</ListTitle>
           <PlaylistActionsContainer>

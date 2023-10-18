@@ -2,11 +2,11 @@ import styled from "@emotion/styled";
 import { Container, Paper } from "@mui/material";
 
 const MainContainer = styled(Container)({
-  padding: '20px 0px 30px 0px'
+  padding: '5px 0px 30px 0px'
 });
 
 const StyledPaper = styled(Paper)({
-  padding: '20px',
+  padding: '10px',
   background: 'transparent'
 });
 

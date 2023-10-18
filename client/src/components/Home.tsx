@@ -4,7 +4,7 @@ import { Typography, Box, Button, DialogTitle, DialogContent } from '@mui/materi
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useParams } from 'react-router-dom';
+import { Outlet, useNavigate, useParams } from 'react-router-dom';
 import TextInput from './forms/inputs/TextInput';
 import { PlaylistType } from '../types/index.js';
 import Snackbar from './presentational/Snackbar';
@@ -17,7 +17,6 @@ import { ENVIRONMENTS, REACT_APP_ENV } from '../constants';
 import ErrorBoundary from './ErrorBoundary';
 import Page from './presentational/Page';
 import WebPlayback from './WebPlayback';
-import Playlist from './Playlist';
 
 const ListHeader = styled('div')({
   display: 'flex',
@@ -72,13 +71,21 @@ function Home() {
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
   const [playlists, setPlaylists] = useState<PlaylistType[]>([]);
   const [openPlaylist, setOpenPlaylist] = useState(!!playlistId);
-  const { setUserIdContext } = useUserContext();
+  const userContext = useUserContext();
+  const navigate = useNavigate();
+  const snackbarContext = useSnackbarContext();
+
   const {
     clearSnackbar,
     snackbarMessage,
     severity,
     setErrorSnackbar,
-  } = useSnackbarContext();
+  } = snackbarContext;
+
+  const closePlaylist = () => {
+    setOpenPlaylist(false);
+    navigate(`/home/${userId}`);
+  }
 
   const handleCreatePlaylist = async () => {
     if (userId) {
@@ -132,7 +139,7 @@ function Home() {
       setErrorSnackbar(`Error selecting playlist.`);
     } else {
       setOpenPlaylist(true);
-      window.location.href = `/home/${userId}/playlist/${id}`;
+      navigate(`/home/${userId}/playlist/${id}`);
     }
   }
 
@@ -161,15 +168,15 @@ function Home() {
         if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log('error getting playlists', e);
         }
-        setErrorSnackbar('Error getting playlists.');
+        snackbarContext.setErrorSnackbar('Error getting playlists.');
       }
     }
 
     if (userId) {
-      setUserIdContext(userId);
+      userContext.setUserIdContext(userId);
       getPlaylists();
     }
-  }, [userId]);
+  }, [userId, userContext, snackbarContext]);
 
 
   return (
@@ -178,7 +185,7 @@ function Home() {
         <div style={{ paddingBottom: '20%' }}>
           <ErrorBoundary key='All Playlists'>
             {openPlaylist ?
-              <Playlist />
+              <Outlet context={[closePlaylist]} />
               :
               <>
                 <ListHeader>

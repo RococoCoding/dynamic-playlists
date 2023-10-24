@@ -8,7 +8,8 @@ export const {
   DB_PASSWORD,
   DB_URL,
   DATABASE_URL,
-  SECRET_KEY
+  SECRET_KEY,
+  JWT_SECRET,
 } = process.env;
 
 export const VALID_SLOT_TYPES = ['playlist', 'album', 'track', 'artist'];

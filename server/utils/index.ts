@@ -1,3 +1,6 @@
+import { JWT_SECRET } from "../constants";
+import jwt from 'jsonwebtoken';
+
 export const generateRandomString = function (length: number) {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -7,3 +10,16 @@ export const generateRandomString = function (length: number) {
   }
   return text;
 };
+
+export const generateToken = (username: string) => {
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET is not set.');
+  }
+  const payload = {
+    subject: username
+  };
+  const options = {
+    expiresIn: '1h'
+  };
+  return jwt.sign(payload, JWT_SECRET!, options);
+}

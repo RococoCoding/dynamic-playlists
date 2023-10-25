@@ -10,7 +10,6 @@ type Props = {
   data?: any;
   token?: string;
   headers?: Header;
-  signal?: AbortSignal;
 }
 
 type Header = {
@@ -32,14 +31,12 @@ const callApi = async ({
   data,
   token,
   headers,
-  signal,
 }: Props): Promise<{ data: any }> => {
   try {
     const axiosInput: AxiosInput = {
       method,
       url: `${baseUrl || `${SERVER_BASE_URL}api/`}${path}`,
       data,
-      ...(signal ? { signal } : {}),
       ...(headers ? { headers } : {})
     }
     if (tokenExists(token)) {

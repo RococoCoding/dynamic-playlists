@@ -1,6 +1,5 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useParams } from 'react-router-dom';
 import { getAccessToken, getDpToken } from '../../utils/tokens';
-import { userId } from '../../utils';
 
 // import useAuth from '../index';
 
@@ -11,8 +10,9 @@ interface Props {
 
 const ProtectedRoute = ({
   children,
-  redirectPath = '/login'
+  redirectPath = '/'
 }: Props) => {
+  const { userid: userId } = useParams();
   const isUser = !!userId;
   const hasAuthenticated = !!getDpToken() && !!getAccessToken();
   return (hasAuthenticated && isUser) ? (

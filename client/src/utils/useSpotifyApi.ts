@@ -80,7 +80,8 @@ const useSpotifyApi = () => {
           } else {
             throwReauthError('Failed to refresh: missing access token.');
           }
-          return callApi(callApiInput);
+          const res = await callApi(callApiInput);
+          return res;
         }
         throw e;
       }

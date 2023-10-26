@@ -44,24 +44,30 @@ const callApi = async ({
     const res = await axios(axiosInput);
     return { data: res.data };
   } catch (error: any) {
-    const token = getAccessToken()
+    const spotifyAccessToken = getAccessToken()
     if (REACT_APP_ENV === ENVIRONMENTS.development) {
-      console.log('callApi input', { baseUrl, method, path, data: JSON.stringify(data), token });
+      console.log('callApi input', { baseUrl, method, path, data: JSON.stringify(data), spotifyAccessToken });
       console.error('callApi error', getErrorMessage(error), error);
     }
     if (error.response?.data?.error) {
-      if (error.response?.data?.error?.code === DP_ERROR_CODES.requestToken && tokenExists(token)) {
+      if (error.response?.data?.error?.code === DP_ERROR_CODES.requestToken && tokenExists(spotifyAccessToken)) {
         const userId = getUserId();
         // request new dp token
         const tokenInput: AxiosInput = {
           method: 'POST',
           url: `${SERVER_BASE_URL}auth/token`,
-          data: { username: userId, accessToken: token },
+          data: { username: userId, accessToken: spotifyAccessToken },
         }
         const { data: dpToken } = await axios(tokenInput);
         setDpToken(dpToken);
         // retry callApi
-        const res = await callApi({ baseUrl, method, path, data, token: dpToken, headers });
+        const res = await callApi({
+          baseUrl,
+          method,
+          path,
+          data,
+          headers: { ...headers, Authorization: dpToken }
+        });
         return { data: res.data }
       }
     }

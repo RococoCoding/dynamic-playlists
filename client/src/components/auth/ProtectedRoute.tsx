@@ -1,12 +1,11 @@
-import { ReactNode } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useUserContext } from '../../contexts/user';
-import { getDpToken } from '../../utils/tokens';
+import { getAccessToken, getDpToken } from '../../utils/tokens';
+import { userId } from '../../utils';
 
 // import useAuth from '../index';
 
 interface Props {
-  children?: JSX.Element | ReactNode,
+  children?: JSX.Element,
   redirectPath?: string,
 }
 
@@ -14,9 +13,8 @@ const ProtectedRoute = ({
   children,
   redirectPath = '/login'
 }: Props) => {
-  const { userId } = useUserContext();
   const isUser = !!userId;
-  const hasAuthenticated = !!getDpToken();
+  const hasAuthenticated = !!getDpToken() && !!getAccessToken();
   return (hasAuthenticated && isUser) ? (
     // children for using ProtectedRoute as a wrapper
     // Outlet for using ProtectedRoute as a Layout component

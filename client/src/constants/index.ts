@@ -46,3 +46,7 @@ export type SlotType = typeof SLOT_TYPES_MAP_BY_ID[keyof typeof SLOT_TYPES_MAP_B
 export const SLOT_TYPES_LIST:SlotType[] = Object.values(SLOT_TYPES_MAP_BY_ID) as SlotType[];
 
 export const SLOT_TYPES_THAT_REQUIRE_ARTIST = [SLOT_TYPES_MAP_BY_NAME.track, SLOT_TYPES_MAP_BY_NAME.album, SLOT_TYPES_MAP_BY_NAME.playlist];
+
+export const DP_ERROR_CODES = {
+  requestToken: 'DP-RR-TOK',
+}

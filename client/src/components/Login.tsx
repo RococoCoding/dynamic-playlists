@@ -1,13 +1,12 @@
-import { useUserContext } from "../contexts/user";
 import { ENVIRONMENTS, REACT_APP_ENV } from "../constants";
 import { getDpUser } from "../utils/users/dp";
 import { getSpotifyUser } from "../utils/users/spotify";
 import useSpotifyApi from "../utils/useSpotifyApi";
 import { useNavigate } from "react-router-dom";
 import getAuthorizeSpotifyArgs from "../utils/authorizeSpotify";
+import { setUserId, userId } from "../utils";
 
 function Login() {
-  const { userId, setUserIdContext } = useUserContext();
   const { callSpotifyApi } = useSpotifyApi();
   const navigate = useNavigate();
 
@@ -24,7 +23,7 @@ function Login() {
           // double-check dp user exists too
           const dpUser = await getDpUser(spotifyUserId);
           if (dpUser) {
-            setUserIdContext(spotifyUserId);
+            setUserId(spotifyUserId);
             navigate('/home/' + spotifyUserId);
           } else {
             throw new Error(`Matching Dp user does not exist for Spotify user ${spotifyUserId}`);

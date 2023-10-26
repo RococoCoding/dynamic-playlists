@@ -14,6 +14,14 @@ export const setTokens = (accessToken: string, refreshToken: string) => {
   localStorage.setItem('refresh_token', refreshToken);
 }
 
+export const getDpToken = () => {
+  return localStorage.getItem('dp_token');
+}
+
+export const setDpToken = (token: string) => {
+  localStorage.setItem('dp_token', token);
+}
+
 export const tokenExists = (token?: string | null) => !!token && token !== 'undefined';
 
 export const requestSpotifyTokens = async (callSpotifyApi: Function, code: string | null) => {

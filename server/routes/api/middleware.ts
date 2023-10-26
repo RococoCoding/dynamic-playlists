@@ -1,13 +1,13 @@
 import { NextFunction, Request } from "express";
-import { findUser } from "../../services/user";
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET, SPOTIFY_BASE_URL } from "../../constants";
 import { AuthResponse } from "../../types";
-import useAxios from "../../utils/axios";
+import useAxios from "../../utils/axios.js";
+import { findUser } from "../../services/user/index.js";
+import { JWT_SECRET, SPOTIFY_BASE_URL } from "../../constants/index.js";
 
 export const validateUser = async (req: Request, res: AuthResponse, next: NextFunction) =>{
-  const username = req?.body?.username;
-  const accessToken = req.body.access_token;
+  const username = req.body.username;
+  const accessToken = req.body.accessToken;
   if (!accessToken) {
     return res.status(400).json("Missing access_token.");
   }
@@ -52,7 +52,12 @@ export const validateUser = async (req: Request, res: AuthResponse, next: NextFu
 export const authorize = (req: Request, res: AuthResponse, next: NextFunction) => {
   const token = req.headers.authorization;
   if (!token) {
-    return res.status(401).json(`Missing authorization token.`);
+    return res.status(401).json({
+      error: {
+        message: 'Missing authorization token.',
+        code: 'DP-RR-TOK'
+      }
+    });
   }
   if (!JWT_SECRET) {
     console.log(`JWT_SECRET is not set.`);

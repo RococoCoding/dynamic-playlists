@@ -9,6 +9,8 @@ import Home from './components/Home';
 import ErrorBoundary from './components/ErrorBoundary';
 import Playlist from './components/Playlist';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import Snackbar from './components/presentational/Snackbar';
+import { useSnackbarContext } from './contexts/snackbar';
 
 const Header = styled(AppBar)({
   backgroundColor: '#1DB954',
@@ -21,6 +23,7 @@ const HeaderText = styled(Typography)({
 });
 
 function App() {
+  const { snackbarMessage, severity, clearSnackbar } = useSnackbarContext();
   return (
     <Router>
       <Header position="static">
@@ -40,7 +43,17 @@ function App() {
           </Route>
           <Route path="/" element={<Landing />} />
         </Routes>
-      </ErrorBoundary>
+      </ErrorBoundary>{
+        snackbarMessage &&
+        <ErrorBoundary key='Display Snackbar'>
+          <Snackbar
+            closeSnackbar={clearSnackbar}
+            message={snackbarMessage}
+            severity={severity}
+          />
+          </ErrorBoundary>
+      }
+
     </Router>
   );
 }

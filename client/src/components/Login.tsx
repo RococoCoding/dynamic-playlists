@@ -20,10 +20,10 @@ function Login() {
         const spotifyUser = await getSpotifyUser(callSpotifyApi);
         if (spotifyUser) {
           const { id: spotifyUserId } = spotifyUser;
+          setUserId(spotifyUserId);
           // double-check dp user exists too
           const dpUser = await getDpUser(spotifyUserId);
           if (dpUser) {
-            setUserId(spotifyUserId);
             navigate('/home/' + spotifyUserId);
           } else {
             throw new Error(`Matching Dp user does not exist for Spotify user ${spotifyUserId}`);

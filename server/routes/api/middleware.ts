@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { AuthResponse } from "../../types";
 import useAxios from "../../utils/axios.js";
 import { findUser } from "../../services/user/index.js";
-import { JWT_SECRET, SPOTIFY_BASE_URL } from "../../constants/index.js";
+import { DP_ERROR_CODES, JWT_SECRET, SPOTIFY_BASE_URL } from "../../constants/index.js";
 
 export const validateUser = async (req: Request, res: AuthResponse, next: NextFunction) =>{
   const username = req.body.username;
@@ -55,7 +55,7 @@ export const authorize = (req: Request, res: AuthResponse, next: NextFunction) =
     return res.status(401).json({
       error: {
         message: 'Missing authorization token.',
-        code: 'DP-RR-TOK'
+        code: DP_ERROR_CODES.requestToken
       }
     });
   }
@@ -66,7 +66,12 @@ export const authorize = (req: Request, res: AuthResponse, next: NextFunction) =
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
       if (err.name === 'TokenExpiredError') {
-        return res.status(500).json(`Token expired.`);
+        return res.status(500).json({
+          error: {
+            code: DP_ERROR_CODES.requestToken,
+            message: 'Token expired.'
+          }
+        });
       }
       return res.status(500).json(`Could not verify JWT.`);
     }

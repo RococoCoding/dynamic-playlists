@@ -14,3 +14,7 @@ export const {
 
 export const VALID_SLOT_TYPES = ['playlist', 'album', 'track', 'artist'];
 export const SPOTIFY_BASE_URL = 'https://api.spotify.com/v1/';
+
+export const DP_ERROR_CODES = {
+  requestToken: 'DP-RR-TOK',
+}

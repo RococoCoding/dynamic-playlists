@@ -12,6 +12,8 @@ export const requiresArtist = (type: keyof typeof SLOT_TYPES_MAP_BY_ID | keyof t
 export const getErrorMessage = (error: any) => error?.response?.data?.error?.message || error?.response?.data?.error_description || error?.response?.data?.error
 || error?.response?.data || error?.message || error;
 
+export const getErrorCode = (error: any) => error?.response?.data?.error?.code || error.code;
+
 type PoolTrackWithName = PoolTrack & { name?: string };
 const pickRandomTrack = (pool: PoolTrackWithName[]) => {
   const randomIndex = Math.floor(Math.random() * pool.length);

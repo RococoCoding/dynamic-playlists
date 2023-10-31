@@ -23,3 +23,6 @@ export const generateToken = (username: string) => {
   };
   return jwt.sign(payload, JWT_SECRET!, options);
 }
+
+export const getErrorMessage = (error: any) => error?.response?.data?.error?.message || error?.response?.data?.error_description || error?.response?.data?.error
+|| error?.response?.data || error?.message || error;

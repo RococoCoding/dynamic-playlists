@@ -7,6 +7,7 @@ import { ENVIRONMENTS, REACT_APP_ENV } from "../constants";
 import { useNavigate } from "react-router-dom";
 import { setUserId } from "../utils";
 import { useSnackbarContext } from "../contexts/snackbar";
+import { Backdrop, CircularProgress } from "@mui/material";
 
 // Callback function after user authorizes the DP app with Spotify.
 // Retrieves access & refresh tokens and fetches the user.
@@ -57,9 +58,11 @@ function RequestToken() {
   }, []);
 
   return (
-    <div>Oops, something went wrong!
-      <a href="/">Return to home</a>
-    </div>
+    <Backdrop
+      open={true}
+    >
+      <CircularProgress color="inherit" />
+    </Backdrop>
   );
 }
 

@@ -94,3 +94,30 @@ export type PoolTrack = {
 }
 
 export type SeverityLevel = 'success' | 'error' | 'warning' | 'info';
+
+export type CallSpotifyApiProps = {
+  baseUrl?: string;
+  method: string;
+  path: string;
+  data?: any;
+  headers?: any;
+  token?: string;
+  userId?: string;
+}
+
+export type CallSpotifyApi = (props: CallSpotifyApiProps) => Promise<any>;
+type Header = {
+  Authorization?: string;
+  'Content-Type'?: string;
+}
+export type CallApiProps = {
+  baseUrl?: string;
+  method: string;
+  path: string;
+  data?: any;
+  token?: string;
+  headers?: Header;
+  userId?: string;
+}
+
+export type CallApi = (props: CallApiProps) => Promise<{ data: any }>;

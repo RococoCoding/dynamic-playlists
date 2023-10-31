@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import ListItem from './presentational/ListItem';
 import { Typography, Box, Button, DialogTitle, DialogContent } from '@mui/material';
 import { styled } from '@mui/material/styles';
@@ -7,9 +7,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
 import TextInput from './forms/inputs/TextInput';
 import { PlaylistType } from '../types/index.js';
-import Snackbar from './presentational/Snackbar';
 import BaseDialog from './forms/BaseDialog';
-import { useUserContext } from '../contexts/user';
 import { useSnackbarContext } from '../contexts/snackbar';
 import { createDpPlaylist, deleteDpPlaylist, getAllUserPlaylists } from '../utils/playlists/dp';
 import { getAccessToken } from '../utils/tokens';
@@ -17,6 +15,7 @@ import { ENVIRONMENTS, REACT_APP_ENV } from '../constants';
 import ErrorBoundary from './ErrorBoundary';
 import Page from './presentational/Page';
 import WebPlayback from './WebPlayback';
+import { setUserId as setUserIdRef } from '../utils';
 
 const ListHeader = styled('div')({
   display: 'flex',
@@ -71,14 +70,11 @@ function Home() {
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
   const [playlists, setPlaylists] = useState<PlaylistType[]>([]);
   const [openPlaylist, setOpenPlaylist] = useState(!!playlistId);
-  const userContext = useUserContext();
   const navigate = useNavigate();
   const snackbarContext = useSnackbarContext();
+  const setUserId = useCallback(setUserIdRef, []);
 
   const {
-    clearSnackbar,
-    snackbarMessage,
-    severity,
     setErrorSnackbar,
   } = snackbarContext;
 
@@ -173,10 +169,10 @@ function Home() {
     }
 
     if (userId) {
-      userContext.setUserIdContext(userId);
+      setUserId(userId);
       getPlaylists();
     }
-  }, [userId, userContext, snackbarContext]);
+  }, [userId, setUserId, snackbarContext]);
 
 
   return (
@@ -230,16 +226,6 @@ function Home() {
               handleSubmit={handleCreatePlaylist}
               isDialogOpen={openCreatePlaylist}
               submitDisabled={!newPlaylistTitle}
-            />
-          </ErrorBoundary>
-      }
-      {
-        snackbarMessage &&
-        <ErrorBoundary key='Display Snackbar'>
-          <Snackbar
-            closeSnackbar={clearSnackbar}
-            message={snackbarMessage}
-            severity={severity}
             />
           </ErrorBoundary>
       }

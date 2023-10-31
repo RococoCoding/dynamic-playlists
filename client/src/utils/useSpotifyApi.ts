@@ -24,7 +24,7 @@ type Input = {
   path: string;
   data?: any;
   headers?: any;
-  token?: string;
+  userId?: string;
 }
 
 const useSpotifyApi = () => {
@@ -38,7 +38,7 @@ const useSpotifyApi = () => {
     input: InputProps,
     options: OptionProps = {},
   ): Promise<any | void> => {
-    const accessToken = getAccessToken();
+    let accessToken: string | null | void = getAccessToken();
     const refreshToken = getRefreshToken();
     if (!options.skipToken && !tokenExists(accessToken) && !tokenExists(refreshToken)) {
       throwReauthError('Missing tokens.');
@@ -55,24 +55,18 @@ const useSpotifyApi = () => {
         ...input,
         path,
       }
-
+      
       try {
-        // if we need token, add it to api input
+        // add access token if neededd
         if (!options.skipToken) {
-          if (tokenExists(accessToken)) {
-            callApiInput.token = accessToken as string;
-          } else {
-            // if no access token, but there is refresh token (we check if both are missing above)
-            // attempt getting new token with refresh token
-            const newAccessToken = await getNewToken();
-            if (newAccessToken) {
-              callApiInput.token = newAccessToken;
-            } else {
+          if (!accessToken) {
+            accessToken = await getNewToken();
+            if (!accessToken) {
               throwReauthError('Failed to refresh: missing access token.');
             }
           }
+          callApiInput.headers = { ...(input.headers || {} ), Authorization: `Bearer ${accessToken}` }
         }
-
         // Note: A return without /await/ won't hit the catch block
         // return await callApi() is fine, but I'm going to declare the var so it's easier to throw in a console log when debugging
         const res = await callApi(callApiInput);
@@ -82,11 +76,12 @@ const useSpotifyApi = () => {
         if (errorMessage && typeof errorMessage === 'string' && errorMessage.includes('expired')) {
           const newAccessToken = await getNewToken();
           if (newAccessToken) {
-            callApiInput.token = newAccessToken;
+            callApiInput.headers = { ...(input.headers || {} ), Authorization: `Bearer ${newAccessToken}` };
           } else {
             throwReauthError('Failed to refresh: missing access token.');
           }
-          return callApi(callApiInput);
+          const res = await callApi(callApiInput);
+          return res;
         }
         throw e;
       }

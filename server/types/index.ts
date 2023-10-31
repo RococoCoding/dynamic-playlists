@@ -1,5 +1,7 @@
 import { UUID } from "crypto";
 import { VALID_SLOT_TYPES } from "../constants";
+import { Response as ExpressResponse } from "express";
+import { JwtPayload } from "jsonwebtoken";
 
 export interface Playlist {
   id: UUID;
@@ -41,4 +43,11 @@ export interface PoolTrack {
 
 export interface PlaylistWithSlots extends Playlist {
   slots?: Array<Slot>;
+}
+
+export interface AuthResponse extends ExpressResponse {
+  locals: {
+    username?: string;
+    token?: string | JwtPayload;
+  };
 }

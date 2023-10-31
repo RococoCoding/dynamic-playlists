@@ -8,6 +8,9 @@ import RequestToken from './components/RequestToken';
 import Home from './components/Home';
 import ErrorBoundary from './components/ErrorBoundary';
 import Playlist from './components/Playlist';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import Snackbar from './components/presentational/Snackbar';
+import { useSnackbarContext } from './contexts/snackbar';
 
 const Header = styled(AppBar)({
   backgroundColor: '#1DB954',
@@ -20,6 +23,7 @@ const HeaderText = styled(Typography)({
 });
 
 function App() {
+  const { snackbarMessage, severity, clearSnackbar } = useSnackbarContext();
   return (
     <Router>
       <Header position="static">
@@ -32,12 +36,24 @@ function App() {
       <ErrorBoundary key='pages'>
         <Routes>
           <Route path="/auth/callback" element={<RequestToken />} />
-          <Route path="/home/:userid/*" element={<Home />} >
-            <Route path="playlist/:playlistid" element={<Playlist />} />
+          <Route element={<ProtectedRoute />} >
+            <Route path="/home/:userid/*" element={<Home />} >
+              <Route path="playlist/:playlistid" element={<Playlist />} />
+            </Route>
           </Route>
           <Route path="/" element={<Landing />} />
         </Routes>
-      </ErrorBoundary>
+      </ErrorBoundary>{
+        snackbarMessage &&
+        <ErrorBoundary key='Display Snackbar'>
+          <Snackbar
+            closeSnackbar={clearSnackbar}
+            message={snackbarMessage}
+            severity={severity}
+          />
+          </ErrorBoundary>
+      }
+
     </Router>
   );
 }

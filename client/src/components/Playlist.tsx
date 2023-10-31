@@ -17,9 +17,8 @@ import { ENVIRONMENTS, REACT_APP_ENV, SLOT_TYPES_MAP_BY_ID, SLOT_TYPES_MAP_BY_NA
 import { BaseSlot, FullSlot, PlaylistType, SearchResultOption, SpotifyEntry } from '../types/index.js';
 import BaseDialog from './forms/BaseDialog';
 import EditSlot from './forms/EditSlot';
-import { getRandomTrack, requiresArtist } from '../utils';
+import { getRandomTrack, requiresArtist, userId } from '../utils';
 import useSpotifyApi from '../utils/useSpotifyApi';
-import { useUserContext } from '../contexts/user';
 import { useSnackbarContext } from '../contexts/snackbar';
 import { getPlaylistWithSlots, linkSpotifyPlaylistToDpPlaylist } from '../utils/playlists/dp';
 import {
@@ -78,7 +77,6 @@ function Playlist() {
   const [selectedOption, setSelectedOption] = useState<SearchResultOption | null>(null);
   const [slotType, setSlotType] = useState(selectedSlot?.type ? SLOT_TYPES_MAP_BY_ID[selectedSlot.type] : '');
   const editMode = !!selectedSlot;
-  const { userId } = useUserContext();
   const { callSpotifyApi } = useSpotifyApi();
   const snackbarContext = useSnackbarContext();
   const { setErrorSnackbar, setInfoSnackbar } = snackbarContext;

@@ -1,21 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import useSpotifyApi from "../utils/useSpotifyApi";
-import { useUserContext } from "../contexts/user";
 import { requestSpotifyTokens, setTokens } from "../utils/tokens";
 import { getDpUser } from "../utils/users/dp";
 import { getSpotifyUser } from "../utils/users/spotify";
 import { ENVIRONMENTS, REACT_APP_ENV } from "../constants";
 import { useNavigate } from "react-router-dom";
+import { setUserId } from "../utils";
+import { useSnackbarContext } from "../contexts/snackbar";
+import { Backdrop, CircularProgress } from "@mui/material";
 
 // Callback function after user authorizes the DP app with Spotify.
 // Retrieves access & refresh tokens and fetches the user.
 function RequestToken() {
-  const [errorMsg, setErrorMsg] = useState<string>('');
   const { callSpotifyApi } = useSpotifyApi();
-  const { setUserIdContext } = useUserContext();
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   let code = urlParams.get('code');
+  const { setErrorSnackbar } = useSnackbarContext();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -26,19 +27,21 @@ function RequestToken() {
           try {
             setTokens(data.access_token, data.refresh_token);
           } catch {
-            setErrorMsg(`Error: Could not set tokens. ${JSON.stringify(data)}`);
-            return;
+            if (ENVIRONMENTS.development) {
+              console.log('Error setting tokens.', data);
+            }
+            throw new Error('Error setting tokens.');
           }
         } else {
           throw new Error('No tokens received.');
         }
         // get spotify profile with user id
         const { id: spotifyUserId } = (await getSpotifyUser(callSpotifyApi)) || {};
+        setUserId(spotifyUserId);
         // get / upsert dp user
         if (spotifyUserId) {
           const newDpUser = await getDpUser(spotifyUserId);
           if (newDpUser) {
-            setUserIdContext(newDpUser.id);
             navigate(`/home/${newDpUser.id}`);
           }
         }
@@ -46,7 +49,8 @@ function RequestToken() {
         if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log('Error authenticating: ', e);
         }
-        setErrorMsg(`Error authenticating with Spotify.`);
+        setErrorSnackbar(`Error authenticating. Please refresh the page and try again.`);
+        navigate('/');
       }
     }
     fetchUser();
@@ -54,9 +58,11 @@ function RequestToken() {
   }, []);
 
   return (
-    <div>
-      {errorMsg}
-    </div>
+    <Backdrop
+      open={true}
+    >
+      <CircularProgress color="inherit" />
+    </Backdrop>
   );
 }
 

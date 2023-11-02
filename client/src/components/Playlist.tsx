@@ -21,6 +21,7 @@ import PublishIcon from '@mui/icons-material/Publish';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import SaveIcon from '@mui/icons-material/Save';
 
 import { ENVIRONMENTS, REACT_APP_ENV, SLOT_TYPES_MAP_BY_ID, SLOT_TYPES_MAP_BY_NAME } from '../constants';
 import { BaseSlot, FullSlot, PlaylistType, SearchResultOption, SpotifyEntry } from '../types/index.js';
@@ -39,7 +40,6 @@ import {
 import { editOrCreateSlot, deleteSlot, getSlotsByPlaylistId, updateAllSlots } from '../utils/slots';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import Page from './presentational/Page';
-import callApi from '../utils/callApi';
 
 const iconTypeMapping = {
   [SLOT_TYPES_MAP_BY_NAME.track]: <AudiotrackIcon />,
@@ -107,6 +107,7 @@ function Playlist() {
   const [openEditSlotDialog, setOpenEditSlotDialog] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<FullSlot>();
   const [selectedOption, setSelectedOption] = useState<SearchResultOption | null>(null);
+  const [dragDisabled, setDragDisabled] = useState(true);
   const [slotType, setSlotType] = useState(selectedSlot?.type ? SLOT_TYPES_MAP_BY_ID[selectedSlot.type] : '');
   const editMode = !!selectedSlot;
   const { callSpotifyApi } = useSpotifyApi();
@@ -153,13 +154,14 @@ function Playlist() {
       result.destination.index
     );
 
-    const updatedSlots = items.map((slot, index) => {
+    setSlots(items);
+  }
+
+  const saveSlotPositions = async () => {
+    const updatedSlots = slots.map((slot, index) => {
       slot.position = index;
       return slot;
     });
-
-    setSlots(updatedSlots);
-
     await updateAllSlots(updatedSlots, playlistId);
   }
 
@@ -369,6 +371,15 @@ function Playlist() {
             <PlaylistActionButton variant="contained" onClick={publishPlaylist}>
               <PublishIcon />
             </PlaylistActionButton>
+            {dragDisabled ?
+              <PlaylistActionButton variant="contained" onClick={() => setDragDisabled(false)}>
+                <EditIcon />
+              </PlaylistActionButton>
+              :
+              <PlaylistActionButton variant="contained" onClick={saveSlotPositions}>
+                <SaveIcon />
+              </PlaylistActionButton>
+            }
           </PlaylistActionsContainer>
         </ListHeader>
         <DragDropContext onDragEnd={onDragEnd}>
@@ -396,22 +407,14 @@ function Playlist() {
                     </SlotInnerContent>
                   );
                   return (
-                    <Draggable key={slot.id} draggableId={slot.id} index={index}>
+                    <Draggable
+                      key={slot.id}
+                      isDragDisabled={dragDisabled}
+                      draggableId={slot.id}
+                      index={index}
+                    >
                       {(provided: DraggableProvided,
                         snapshot: DraggableStateSnapshot) => (
-                        // <ListItem
-                        //   ref={provided.innerRef}
-                        //   {...provided.draggableProps}
-                        //   {...provided.dragHandleProps}
-                        //   style={getItemStyle(
-                        //     snapshot.isDragging,
-                        //     provided.draggableProps.style
-                        //   )}
-                        //   key={slot.id}
-                        //   id={slot.id}
-                        //   icon={iconTypeMapping[slot.type]}
-                        //   innerContent={innerContent}
-                        // />
                         <Card
                           ref={provided.innerRef}
                           {...provided.draggableProps}

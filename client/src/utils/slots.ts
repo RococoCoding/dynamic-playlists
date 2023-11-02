@@ -41,9 +41,11 @@ export const getSlotsByPlaylistId = async (playlistId: string): Promise<Array<Fu
     method: 'GET',
     path: `slots/by-playlist/${playlistId}`
   });
-  slots.sort(({ position }: FullSlot, { position: position2 }: FullSlot) => position - position2)
-  return slots;
+  const sorted = sortSlots(slots);
+  return sorted;
 }
+
+export const sortSlots = (slots: Array<FullSlot>) => slots.sort(({ position }: FullSlot, { position: position2 }: FullSlot) => position - position2)
 
 
 export const updateSlotWithNewTrack = async (slotId: string, trackId: string):Promise<FullSlot> => {
@@ -56,3 +58,17 @@ export const updateSlotWithNewTrack = async (slotId: string, trackId: string):Pr
   });
   return data;
 }
+
+export const updateAllSlots = async (
+  slots: Array<FullSlot>,
+  playlistId?: string,
+): Promise<Array<FullSlot>> => {
+  const { data } = await callApi({
+    method: 'PUT',
+    path: `slots/by-playlist/${playlistId}`,
+    data: {
+      slots,
+    }
+  });
+  return data;
+};

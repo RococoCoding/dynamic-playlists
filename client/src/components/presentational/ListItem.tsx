@@ -27,6 +27,8 @@ type Props = {
   icon?: JSX.Element;
   innerContent: JSX.Element;
   onClick?: (id: string) => void;
+  ref?: React.Ref<HTMLDivElement>;
+  style?: React.CSSProperties;
 }
 
 function ListItem({
@@ -34,10 +36,12 @@ function ListItem({
   id,
   icon,
   innerContent,
-  onClick
+  onClick,
+  ref,
+  style,
 }: Props) {
   return (
-    <ListItemCard>
+    <ListItemCard ref={ref} style={style}>
       <StyledCardContent style={{ flexGrow: '1' }} onClick={() => onClick && onClick(id)}>
         {icon &&
           <StyledIconBox>

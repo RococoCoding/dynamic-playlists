@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Typography, Button, Backdrop, CircularProgress } from '@mui/material';
+import {
+  DragDropContext,
+  Draggable,
+  DraggableProvided,
+  DraggableStateSnapshot,
+  Droppable,
+  DroppableProvided,
+  DroppableStateSnapshot,
+  DropResult,
+} from "react-beautiful-dnd";
+import { Typography, Button, Backdrop, CircularProgress, Card, CardContent, Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -12,7 +22,6 @@ import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
-import ListItem from './presentational/ListItem';
 import { ENVIRONMENTS, REACT_APP_ENV, SLOT_TYPES_MAP_BY_ID, SLOT_TYPES_MAP_BY_NAME } from '../constants';
 import { BaseSlot, FullSlot, PlaylistType, SearchResultOption, SpotifyEntry } from '../types/index.js';
 import BaseDialog from './forms/BaseDialog';
@@ -27,9 +36,10 @@ import {
   clearSpotifyPlaylist,
   populateSpotifyPlaylist
 } from '../utils/playlists/spotify';
-import { editOrCreateSlot, deleteSlot, getSlotsByPlaylistId } from '../utils/slots';
+import { editOrCreateSlot, deleteSlot, getSlotsByPlaylistId, updateAllSlots } from '../utils/slots';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import Page from './presentational/Page';
+import callApi from '../utils/callApi';
 
 const iconTypeMapping = {
   [SLOT_TYPES_MAP_BY_NAME.track]: <AudiotrackIcon />,
@@ -67,6 +77,28 @@ const SlotInnerContent = styled('div')({
     width: '87%',
   },
 });
+
+const reorder = (list: Array<FullSlot>, startIndex: number, endIndex: number) => {
+  const result = Array.from(list);
+  const [removed] = result.splice(startIndex, 1);
+  result.splice(endIndex, 0, removed);
+
+  return result;
+};
+
+const getListStyle = (isDraggingOver: boolean) => ({
+  background: isDraggingOver ? "lightblue" : "lightgrey",
+});
+
+const getItemStyle = (isDragging: boolean, draggableStyle: any) => ({
+  // some basic styles to make the items look a bit nicer
+  userSelect: "none",
+  // change background colour if dragging
+  background: isDragging ? "lightgreen" : "grey",
+  // styles we need to apply on draggables
+  ...draggableStyle
+});
+
 function Playlist() {
   const { playlistid: playlistId } = useParams();
   const [playlist, setPlaylist] = useState<PlaylistType | null>(null);
@@ -109,6 +141,28 @@ function Playlist() {
     setSelectedOption(null);
   }
 
+  const onDragEnd = async (result: DropResult) => {
+    // dropped outside the list
+    if (!result.destination) {
+      return;
+    }
+
+    const items = reorder(
+      slots,
+      result.source.index,
+      result.destination.index
+    );
+
+    const updatedSlots = items.map((slot, index) => {
+      slot.position = index;
+      return slot;
+    });
+
+    setSlots(updatedSlots);
+
+    await updateAllSlots(updatedSlots, playlistId);
+  }
+
   const publishPlaylist = async () => {
     if (!playlist) {
       setErrorSnackbar('No selectedPlaylist to publish.');
@@ -116,8 +170,6 @@ function Playlist() {
     }
     let spotifyPlaylistId = playlist.spotify_id;
     // if playlist has never been published before, create new playlist in spotify
-    // TODO: support descriptions
-    // TODO: support private playlists
     if (!spotifyPlaylistId) {
       // spotify api call to create a new empty playlist
       try {
@@ -319,31 +371,74 @@ function Playlist() {
             </PlaylistActionButton>
           </PlaylistActionsContainer>
         </ListHeader>
-        {slots.map(slot => {
-          const label = slot.name + (requiresArtist(slot.type) && slot.artist_name?.length ? ' - ' + slot.artist_name.join(', ') : '')
-          const innerContent = (
-            <SlotInnerContent>
-              <div className="scroll-container" style={{ marginLeft: '10px', display: 'flex', alignItems: 'center', width: '80%', flexGrow: '1' }}>
-                <div className={label.length > 24 ? "scroll-content" : ""} style={{ fontSize: '1rem' }}>
-                  {label}
-                </div>
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Droppable droppableId="droppable">
+            {(provided: DroppableProvided,
+              snapshot: DroppableStateSnapshot) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                style={getListStyle(snapshot.isDraggingOver)}
+              >
+                {slots.map((slot, index) => {
+                  const label = slot.name + (requiresArtist(slot.type) && slot.artist_name?.length ? ' - ' + slot.artist_name.join(', ') : '')
+                  const innerContent = (
+                    <SlotInnerContent>
+                      <div className="scroll-container" style={{ marginLeft: '10px', display: 'flex', alignItems: 'center', width: '80%', flexGrow: '1' }}>
+                        <div className={label.length > 24 ? "scroll-content" : ""} style={{ fontSize: '1rem' }}>
+                          {label}
+                        </div>
+                      </div>
+                      <div>
+                        <DeleteIcon onClick={() => handleDeleteSlot(slot.id)} />
+                        <EditIcon style={{ marginRight: '5px' }} onClick={() => selectSlotToEdit(slot.id)} />
+                      </div>
+                    </SlotInnerContent>
+                  );
+                  return (
+                    <Draggable key={slot.id} draggableId={slot.id} index={index}>
+                      {(provided: DraggableProvided,
+                        snapshot: DraggableStateSnapshot) => (
+                        // <ListItem
+                        //   ref={provided.innerRef}
+                        //   {...provided.draggableProps}
+                        //   {...provided.dragHandleProps}
+                        //   style={getItemStyle(
+                        //     snapshot.isDragging,
+                        //     provided.draggableProps.style
+                        //   )}
+                        //   key={slot.id}
+                        //   id={slot.id}
+                        //   icon={iconTypeMapping[slot.type]}
+                        //   innerContent={innerContent}
+                        // />
+                        <Card
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          style={getItemStyle(
+                            snapshot.isDragging,
+                            provided.draggableProps.style
+                          )}
+                        >
+                          <CardContent style={{ flexGrow: '1' }}>
+                            {iconTypeMapping[slot.type] &&
+                              <Box>
+                                {iconTypeMapping[slot.type]}
+                              </Box>
+                            }
+                            {innerContent}
+                          </CardContent>
+                        </Card >
+                      )}
+                    </Draggable>
+                  )
+                })}
+                {provided.placeholder}
               </div>
-              <div>
-                <DeleteIcon onClick={() => handleDeleteSlot(slot.id)} />
-                <EditIcon style={{ marginRight: '5px' }} onClick={() => selectSlotToEdit(slot.id)} />
-              </div>
-            </SlotInnerContent>
-          );
-          return (
-            <ListItem
-              key={slot.id}
-              id={slot.id}
-              icon={iconTypeMapping[slot.type]}
-              innerContent={innerContent}
-            />
-          )
-        })
-        }
+            )}
+          </Droppable>
+        </DragDropContext>
       </Page>
       {
         openEditSlotDialog &&
@@ -352,7 +447,7 @@ function Playlist() {
           handleDialogClose={handleDialogClose}
           handleSubmit={handleEditSlotSubmit}
           isDialogOpen={openEditSlotDialog}
-          submitDisabled={false} // TODO: add validation
+          submitDisabled={false}
           fullWidth={true}
           submitText={selectedSlot ? 'Edit' : 'Create'}
         />

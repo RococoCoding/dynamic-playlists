@@ -4,6 +4,7 @@ import {
   deleteSlot,
   getSlotById,
   getSlotsByPlaylistId,
+  updateManySlots,
   updateSlot
 } from '../../../services/slot/index.js';
 
@@ -21,6 +22,12 @@ slotsRouter.get('/:id', async (req, res) => {
 slotsRouter.get('/by-playlist/:playlistId', async (req, res) => {
   const slots = await getSlotsByPlaylistId(req.params.playlistId);
   res.json(slots);
+});
+
+slotsRouter.put('/by-playlist/:playlistId', async (req, res) => {
+  const slots = req.body.slots;
+  const updatedSlots = await updateManySlots(slots);
+  res.json(updatedSlots);
 });
 
 slotsRouter.post('/', async (req, res) => {

@@ -41,6 +41,7 @@
   - header nav
   - delete account
   - Are you sure? on delete list / slot
+  - validation on forms
 
 Follow-up Todos:
 - Figure out a better solution for getting out of sync with spotify version of the playlist?
@@ -55,6 +56,8 @@ Follow-up Todos:
   - exclude live/best of albums
   - custom filters (remove songs from pool individually -- gotta think through how this works with updating pools)
 - webplayback progress bar for position in song
+- private playlists
+- playlist descriptions
 
 </details>
 

@@ -1,5 +1,6 @@
 import { PlaylistType, PlaylistWithSlots } from "../../types";
 import callApi from "../callApi";
+import { sortSlots } from "../slots";
 
 export const createDpPlaylist = async (title: string, userId: string):Promise<Array<PlaylistType>> => {
   const { data: updatedUserPlaylists } = await callApi({
@@ -23,11 +24,12 @@ export const deleteDpPlaylist = async (playlistId: string):Promise<Array<Playlis
 }
 
 export const getPlaylistWithSlots = async (playlistId: string):Promise<PlaylistWithSlots> => {
-  const { data } = await callApi({
+  const { data: playlist } = await callApi({
     method: 'GET',
     path: `playlists/${playlistId}?include=slots`,
   });
-  return data;
+  const sorted = sortSlots(playlist.slots);
+  return { ...playlist, slots: sorted };
 }
 
 export const getDpPlaylistBySpotifyId = async (playlistId: string):Promise<PlaylistWithSlots> => {

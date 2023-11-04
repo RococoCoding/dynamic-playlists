@@ -9,19 +9,19 @@ import {
   DroppableStateSnapshot,
   DropResult,
 } from "react-beautiful-dnd";
-import { Typography, Button, Backdrop, CircularProgress, Card, CardContent, Box } from '@mui/material';
+import { Typography, Button, Backdrop, CircularProgress, Box, Menu, MenuItem, List, ListItem } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
 import PersonIcon from '@mui/icons-material/Person';
 import AlbumIcon from '@mui/icons-material/Album';
 import AudiotrackIcon from '@mui/icons-material/Audiotrack';
 import QueueMusicIcon from '@mui/icons-material/QueueMusic';
 import PublishIcon from '@mui/icons-material/Publish';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
-import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import CloseIcon from '@mui/icons-material/Close';
 
 import { ENVIRONMENTS, REACT_APP_ENV, SLOT_TYPES_MAP_BY_ID, SLOT_TYPES_MAP_BY_NAME } from '../constants';
 import { BaseSlot, FullSlot, PlaylistType, SearchResultOption, SpotifyEntry } from '../types/index.js';
@@ -48,34 +48,33 @@ const iconTypeMapping = {
   [SLOT_TYPES_MAP_BY_NAME.playlist]: <QueueMusicIcon />,
 }
 
-const ListHeader = styled('div')({
+const IconButton = styled(Button)({
+  margin: '0',
+  minWidth: '0',
+  padding: '3px',
+});
+
+const SquareIcon = styled(Box)({
   display: 'flex',
-  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginRight: '10px',
+  '@media (min-width: 600px)': {
+    padding: '5px 8px'
+  }
 });
 
-const ListTitle = styled(Typography)({
-  fontSize: '24px',
-  fontWeight: 'bold',
-  marginBottom: '15px',
-  color: 'white',
+const StyledListItem = styled(ListItem)({
+  padding: '8px',
+  '@media (min-width: 600px)': {
+    padding: '16px'
+  }
 });
 
-const PlaylistActionButton = styled(Button)({
-  marginBottom: '15px',
-});
-
-const PlaylistActionsContainer = styled('div')({
-  display: 'flex',
-  width: '200px',
-  justifyContent: 'space-between',
-});
-
-const SlotInnerContent = styled('div')({
-  display: 'flex',
-  flexGrow: '1',
-  '@media (max-width:600px)': {
-    width: '87%',
-  },
+const getItemStyle = (isDragging: boolean, draggableStyle: any) => ({
+  userSelect: "none",
+  background: isDragging ? "var(--spotify-green)" : "var(--dark-gray)",
+  margin: '3px 0',
+  ...draggableStyle
 });
 
 const reorder = (list: Array<FullSlot>, startIndex: number, endIndex: number) => {
@@ -85,19 +84,6 @@ const reorder = (list: Array<FullSlot>, startIndex: number, endIndex: number) =>
 
   return result;
 };
-
-const getListStyle = (isDraggingOver: boolean) => ({
-  background: isDraggingOver ? "lightblue" : "lightgrey",
-});
-
-const getItemStyle = (isDragging: boolean, draggableStyle: any) => ({
-  // some basic styles to make the items look a bit nicer
-  userSelect: "none",
-  // change background colour if dragging
-  background: isDragging ? "lightgreen" : "grey",
-  // styles we need to apply on draggables
-  ...draggableStyle
-});
 
 function Playlist() {
   const { playlistid: playlistId } = useParams();
@@ -115,6 +101,11 @@ function Playlist() {
   const { setErrorSnackbar, setInfoSnackbar } = snackbarContext;
   const navigate = useNavigate();
   const [closePlaylist] = useOutletContext() as [() => void];
+
+  const [slotMenuAnchorEl, setSlotMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const slotMenuOpen = Boolean(slotMenuAnchorEl);
+  const [playlistMenuAnchorEl, setPlaylistMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const playlistMenuOpen = Boolean(playlistMenuAnchorEl);
 
   const EditSlotDialogContent = (
     <EditSlot
@@ -163,6 +154,7 @@ function Playlist() {
       return slot;
     });
     await updateAllSlots(updatedSlots, playlistId);
+    setDragDisabled(true);
   }
 
   const publishPlaylist = async () => {
@@ -359,89 +351,184 @@ function Playlist() {
     <main>
       <Page>
         <ArrowBackIcon onClick={closePlaylist} />
-        <ListHeader>
-          <ListTitle>{playlist.title}</ListTitle>
-          <PlaylistActionsContainer>
-            <PlaylistActionButton variant="contained" onClick={playPlaylist}>
-              <PlayCircleIcon />
-            </PlaylistActionButton>
-            <PlaylistActionButton variant="contained" onClick={openCreateSlotForm}>
-              <AddIcon />
-            </PlaylistActionButton>
-            <PlaylistActionButton variant="contained" onClick={publishPlaylist}>
-              <PublishIcon />
-            </PlaylistActionButton>
+        <div
+          id="playlist-header"
+          style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'column' }}
+        >
+          <Typography
+            id="playlist-title"
+            style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '15px', color: 'white' }}
+          >
+            {playlist.title}
+          </Typography>
+          <div
+            id="playlist-actions-container"
+            style={{ display: 'flex', minWidth: '200px', justifyContent: 'space-between' }}
+          >
             {dragDisabled ?
-              <PlaylistActionButton variant="contained" onClick={() => setDragDisabled(false)}>
-                <EditIcon />
-              </PlaylistActionButton>
-              :
-              <PlaylistActionButton variant="contained" onClick={saveSlotPositions}>
-                <SaveIcon />
-              </PlaylistActionButton>
-            }
-          </PlaylistActionsContainer>
-        </ListHeader>
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="droppable">
-            {(provided: DroppableProvided,
-              snapshot: DroppableStateSnapshot) => (
               <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                style={getListStyle(snapshot.isDraggingOver)}
+                id="playlist-other-actions-container"
+                style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}
               >
-                {slots.map((slot, index) => {
-                  const label = slot.name + (requiresArtist(slot.type) && slot.artist_name?.length ? ' - ' + slot.artist_name.join(', ') : '')
-                  const innerContent = (
-                    <SlotInnerContent>
-                      <div className="scroll-container" style={{ marginLeft: '10px', display: 'flex', alignItems: 'center', width: '80%', flexGrow: '1' }}>
-                        <div className={label.length > 24 ? "scroll-content" : ""} style={{ fontSize: '1rem' }}>
-                          {label}
-                        </div>
-                      </div>
-                      <div>
-                        <DeleteIcon onClick={() => handleDeleteSlot(slot.id)} />
-                        <EditIcon style={{ marginRight: '5px' }} onClick={() => selectSlotToEdit(slot.id)} />
-                      </div>
-                    </SlotInnerContent>
-                  );
-                  return (
-                    <Draggable
-                      key={slot.id}
-                      isDragDisabled={dragDisabled}
-                      draggableId={slot.id}
-                      index={index}
-                    >
-                      {(provided: DraggableProvided,
-                        snapshot: DraggableStateSnapshot) => (
-                        <Card
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          style={getItemStyle(
-                            snapshot.isDragging,
-                            provided.draggableProps.style
-                          )}
-                        >
-                          <CardContent style={{ flexGrow: '1' }}>
-                            {iconTypeMapping[slot.type] &&
-                              <Box>
-                                {iconTypeMapping[slot.type]}
-                              </Box>
-                            }
-                            {innerContent}
-                          </CardContent>
-                        </Card >
-                      )}
-                    </Draggable>
-                  )
-                })}
-                {provided.placeholder}
+                <PublishIcon style={{ color: 'var(--light-gray)' }} onClick={publishPlaylist} />
+                <IconButton
+                  id="open-additional-playlist-actions-menu"
+                  aria-controls={playlistMenuOpen ? 'open-additional-playlist-actions-menu' : undefined}
+                  aria-haspopup="true"
+                  aria-expanded={playlistMenuOpen ? 'true' : undefined}
+                  onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                    setPlaylistMenuAnchorEl(event.currentTarget);
+                  }}
+                  style={{ color: 'var(--light-gray)', marginLeft: "8px" }}
+                >
+                  <MoreVertIcon />
+                </IconButton>
+                <Menu
+                  id="additional-playlist-actions-menu"
+                  anchorEl={playlistMenuAnchorEl}
+                  open={playlistMenuOpen}
+                  onClose={() => { setPlaylistMenuAnchorEl(null); }}
+                  MenuListProps={{
+                    'aria-labelledby': 'additional-playlist-actions-menu',
+                  }}
+                >
+                  <MenuItem onClick={() => { setDragDisabled(false); setPlaylistMenuAnchorEl(null); }}>
+                    Edit Playlist
+                  </MenuItem>
+                </Menu>
               </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+              :
+              <IconButton onClick={saveSlotPositions}>
+                <CloseIcon style={{ color: 'white', width: '1.5em', height: '100%' }} />
+              </IconButton>
+            }
+            <div
+              id="play-actions-container"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              {dragDisabled ?
+                <IconButton onClick={playPlaylist}>
+                  <PlayCircleIcon style={{ width: '1.5em', height: '100%' }} />
+                </IconButton>
+                :
+                <IconButton onClick={saveSlotPositions}>
+                  <SaveIcon style={{ color: 'white', width: '1.25em', height: '100%' }} />
+                </IconButton>
+              }
+            </div>
+          </div>
+          {dragDisabled &&
+            <List style={{ backgroundImage: 'none' }} onClick={openCreateSlotForm}>
+              <StyledListItem style={{ padding: '0' }}>
+                <Button style={{
+                  color: 'white',
+                  width: '100%',
+                  textTransform: 'none',
+                  justifyContent: 'flex-start',
+                }}
+                  onClick={openCreateSlotForm}
+                >
+                  <SquareIcon>
+                    <AddIcon style={{ color: 'var(--light-gray' }} />
+                  </SquareIcon>
+                  <div
+                    style={{
+                      display: 'inline-block',
+                      marginLeft: '5px'
+                    }
+                    }>
+                    Add to this playlist
+                  </div>
+                </Button>
+              </StyledListItem>
+            </List>
+          }
+        </div>
+        <List>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="droppable">
+              {(provided: DroppableProvided,
+                snapshot: DroppableStateSnapshot) => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  style={{ background: "var(--spotify-black)" }}
+                >
+                  {slots.map((slot, index) => {
+                    const label = slot.name + (requiresArtist(slot.type) && slot.artist_name?.length ? ' - ' + slot.artist_name.join(', ') : '')
+                    return (
+                      <Draggable
+                        key={slot.id}
+                        isDragDisabled={dragDisabled}
+                        draggableId={slot.id}
+                        index={index}
+                      >
+                        {(provided: DraggableProvided,
+                          snapshot: DraggableStateSnapshot) => (
+                          <StyledListItem
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            style={getItemStyle(
+                              snapshot.isDragging,
+                              provided.draggableProps.style
+                            )}
+                          >
+                            {iconTypeMapping[slot.type] &&
+                              <SquareIcon>
+                                {iconTypeMapping[slot.type]}
+                              </SquareIcon>
+                            }
+                            <div
+                              id="slot-label"
+                              style={{ display: 'flex', overflow: 'hidden', alignItems: 'center', flexGrow: '1' }}
+                            >
+                              <p style={{ whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                                {label}
+                              </p>
+                            </div>
+                            <IconButton
+                              id="open-slot-actions-menu"
+                              aria-controls={slotMenuOpen ? 'open-slot-actions-menu' : undefined}
+                              aria-haspopup="true"
+                              aria-expanded={slotMenuOpen ? 'true' : undefined}
+                              onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                                setSlotMenuAnchorEl(event.currentTarget);
+                              }}
+                              style={{ color: 'white' }}
+                            >
+                              <MoreVertIcon />
+                            </IconButton>
+                            <Menu
+                              id="view-slot-actions-menu"
+                              anchorEl={slotMenuAnchorEl}
+                              open={slotMenuOpen}
+                              onClose={() => { setSlotMenuAnchorEl(null); }}
+                              MenuListProps={{
+                                'aria-labelledby': 'view-slot-actions-menu',
+                              }}
+                            >
+                              <MenuItem onClick={() => selectSlotToEdit(slot.id)}>
+                                Edit Slot
+                              </MenuItem>
+                              <MenuItem onClick={() => handleDeleteSlot(slot.id)} >
+                                Delete Slot
+                              </MenuItem>
+                            </Menu>
+                          </StyledListItem>
+                        )}
+                      </Draggable>
+                    )
+                  })}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        </List>
       </Page>
       {
         openEditSlotDialog &&

@@ -58,6 +58,7 @@ Follow-up Todos:
 - webplayback progress bar for position in song
 - private playlists
 - playlist descriptions
+- display playlist length
 
 </details>
 

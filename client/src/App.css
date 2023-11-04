@@ -1,3 +1,9 @@
+:root {
+  --spotify-green: #1DB954;
+  --spotify-black: #191414;
+  --dark-gray: #282828;
+  --light-gray: #a4a4a4;
+}
 * {
   box-sizing: border-box;
   margin: 0;
@@ -10,18 +16,23 @@ body {
 }
 
 body {
-  background-color: #333;
+  background-color: var(--spotify-black);
   color: #eee;
   font-family: Helvetica, Arial;
   font-size: 3vmin;
 }
 
+@media (max-width: 600px) {
+  body {
+    font-size: 4vmin;
+  }
+}
 .App {
   text-align: center;
 }
 
 .App-header {
-  background-color: #282c34;
+  background-color: var(--spotify-black);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -97,7 +108,7 @@ body {
 }
 
 .btn-spotify {
-  background-color: #44c767;
+  background-color: var(--spotify-green);
   border-radius: 28px;
   border: 1px solid #18ab29;
   display: inline-block;

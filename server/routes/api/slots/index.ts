@@ -6,7 +6,7 @@ import {
   getSlotsByPlaylistId,
   updateManySlots,
   updateSlot
-} from '../../../services/slot/index.js';
+} from '../../../services/slot/index';
 
 const slotsRouter = express.Router();
 

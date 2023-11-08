@@ -1,6 +1,6 @@
-import { pool as connectionPool } from '../../index.js';
-import { PoolTrack } from '../../types/index.js';
-import { setPoolLastUpdated } from '../pool/index.js';
+import { pool as connectionPool } from '../../index';
+import { PoolTrack } from '../../types/index';
+import { setPoolLastUpdated } from '../pool/index';
 
 const getPoolTrackById = async (id: string): Promise<PoolTrack | null> => {
   const { rows } = await connectionPool.query(

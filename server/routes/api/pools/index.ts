@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { getPoolById, getPoolBySpotifyId, upsertPool, setPoolLastUpdated, deletePool } from '../../../services/pool/index.js';
-import { Pool } from '../../../types/index.js';
+import { getPoolById, getPoolBySpotifyId, upsertPool, setPoolLastUpdated, deletePool } from '../../../services/pool/index';
+import { Pool } from '../../../types/index';
 
 const poolsRouter = Router();
 

@@ -1,4 +1,4 @@
-import { JWT_SECRET } from "../constants/index.js";
+import { JWT_SECRET } from "../constants/index";
 import jwt from 'jsonwebtoken';
 
 export const generateRandomString = function (length: number) {

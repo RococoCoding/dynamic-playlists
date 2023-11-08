@@ -1,5 +1,5 @@
-import { pool as connectionPool } from '../../index.js';
-import { Pool } from '../../types/index.js';
+import { pool as connectionPool } from '../../index';
+import { Pool } from '../../types/index';
 
 const getPoolById = async (id: string): Promise<Pool | null> => {
   const { rows } = await connectionPool.query('SELECT * FROM pool WHERE id = $1', [id]);

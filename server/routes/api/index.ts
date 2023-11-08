@@ -1,11 +1,11 @@
 import { Router, Request, Response } from "express";
 
-import usersRouter from "./users/index.js";
-import playlistsRouter from "./playlists/index.js";
-import poolsRouter from "./pools/index.js";
-import poolTracksRouter from "./poolTracks/index.js";
-import slotsRouter from "./slots/index.js";
-import { authorize } from "./middleware.js";
+import usersRouter from "./users/index";
+import playlistsRouter from "./playlists/index";
+import poolsRouter from "./pools/index";
+import poolTracksRouter from "./poolTracks/index";
+import slotsRouter from "./slots/index";
+import { authorize } from "./middleware";
 
 const apiRouter = Router();
 apiRouter.use("/users", [authorize], usersRouter);

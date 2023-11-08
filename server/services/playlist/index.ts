@@ -1,6 +1,6 @@
-import { pool } from '../../index.js';
-import { Playlist, PlaylistWithSlots } from '../../types/index.js';
-import { getSlotsByPlaylistId } from '../slot/index.js';
+import { pool } from '../../index';
+import { Playlist, PlaylistWithSlots } from '../../types/index';
+import { getSlotsByPlaylistId } from '../slot/index';
 
 const getPlaylistById = async (id: string): Promise<Playlist | null> => {
   const { rows } = await pool.query(

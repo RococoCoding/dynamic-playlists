@@ -1,8 +1,8 @@
 import { Router, Request } from 'express';
-import { validateUser } from '../api/middleware.js';
-import { AuthResponse } from '../../types/index.js';
-import { JWT_SECRET } from '../../constants/index.js';
-import { generateToken } from '../../utils/index.js';
+import { validateUser } from '../api/middleware';
+import { AuthResponse } from '../../types/index';
+import { JWT_SECRET } from '../../constants/index';
+import { generateToken } from '../../utils/index';
 
 const authRouter = Router();
 

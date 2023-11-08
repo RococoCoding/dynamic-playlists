@@ -2,8 +2,8 @@ import express from 'express';
 import pkg from 'pg';
 import bodyParser from 'body-parser';
 import cors from 'cors';
-import router from './routes/index.js';
-import { DATABASE_URL, DB_PASSWORD, DB_USER } from './constants/index.js';
+import router from './routes/index';
+import { DATABASE_URL, DB_PASSWORD, DB_USER } from './constants/index';
 
 const port = process.env.PORT || 5000;
 

@@ -1,75 +1,60 @@
 import { pool } from '../../index';
-import { Slot } from '../../types/index';
+import { Slot, SlotInput } from '../../types/index';
+import {
+  validateCreateSlotInput,
+  validateUpdateSlotInput,
+  validateStringId,
+  validateUUID
+} from '../../utils';
 import { upsertPool } from '../pool/index';
+import assert = require('node:assert');
+import {
+  createSlotQuery,
+  deleteSlotQuery,
+  getSlotByIdQuery,
+  getSlotsByPlaylistIdQuery,
+  updateManySlotsQuery,
+  updateSlotQuery,
+} from '../queries';
 
-const getSlotById = async (id: string): Promise<Slot | null> => {
-  const { rows } = await pool.query(
-    `SELECT slot.*, pool.last_updated AS pool_last_updated, pool.id AS pool_id, pool.spotify_id AS pool_spotify_id
-     FROM slot
-     JOIN pool ON slot.pool_id = pool.id
-     WHERE slot.id = $1`,
-    [id]
-  );
-  return rows.length > 0 ? rows[0] : null;
-};
-
-const getSlotsByPlaylistId = async (playlistId: string): Promise<Slot[]> => {
-  const { rows } = await pool.query(
-    `SELECT slot.*, pool.last_updated AS pool_last_updated, pool.id AS pool_id, pool.spotify_id AS pool_spotify_id
-     FROM slot
-     LEFT JOIN pool ON slot.pool_id = pool.id
-     WHERE slot.playlist_id = $1`,
-    [playlistId]
-  );
-  return rows;
-};
-
-const createSlot = async (slot: Omit<Slot, 'id'>, spotify_id: string): Promise<Slot> => {
+const createSlot = async (slot: SlotInput, spotify_id: string): Promise<Slot> => {
+  validateStringId(spotify_id);
+  validateCreateSlotInput(slot);
   const { type, name, playlist_id, artist_name, position } = slot;
-  // TODO: transactions
-  const { id: pool_id } = await upsertPool({ spotify_id });
-  const { rows } = await pool.query(
-    `WITH inserted AS (
-      INSERT INTO slot (type, name, playlist_id, artist_name, position, pool_id)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *
-     )
-     SELECT inserted.*, pool.last_updated AS pool_last_updated, pool.id AS pool_id, pool.spotify_id AS pool_spotify_id
-     FROM inserted
-     INNER JOIN pool ON inserted.pool_id = pool.id`,
-    [type, name, playlist_id, artist_name, position, pool_id]
-  );
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { id: pool_id } = await upsertPool({ spotify_id }, client);
+    assert(pool_id, 'Pool id not returned');
+    const { rows } = await client.query(createSlotQuery, [type, name, playlist_id, artist_name, position, pool_id]);
+    await client.query('COMMIT');
+    return rows[0];
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+const deleteSlot = async (id: string): Promise<Slot> => {
+  validateUUID(id);
+  const { rows } = await pool.query(deleteSlotQuery, [id]);
+  assert(rows.length > 0, 'Deleted slot not found');
+  return rows[0]
+};
+
+const getSlotById = async (id: string): Promise<Slot | undefined> => {
+  validateUUID(id);
+  const { rows } = await pool.query(getSlotByIdQuery, [id]);
+  assert(rows.length <= 1, 'More than one slot found');
   return rows[0];
 };
 
-const updateSlot = async (id: string, slot: Partial<Omit<Slot, 'id' | 'created_at' | 'created_by'>>, spotify_id: string): Promise<Slot | null> => {
-  const { type, name, artist_name, position, current_track, pool_id } = slot;
-  let poolId = pool_id;
-  if (spotify_id) {
-    const { id } = await upsertPool({ spotify_id });
-    poolId = id;
-  }
-    const { rows } = await pool.query(
-    `UPDATE slot
-     SET type = COALESCE($1, type),
-         name = COALESCE($2, name),
-         artist_name = COALESCE($3, artist_name),
-         pool_id = COALESCE($4, pool_id),
-         position = COALESCE($5, position),
-         current_track = COALESCE($6, current_track)
-     WHERE id = $7
-     RETURNING *;`,
-    [type, name, artist_name, poolId, position, current_track, id]
-  );
-  return rows.length > 0 ? {...rows[0], id } : null;
-};
-
-const deleteSlot = async (id: string, returnAll?: boolean): Promise<void | Array<Slot>> => {
-  const deletedSlot = await pool.query('DELETE FROM slot WHERE id = $1 RETURNING *', [id]);
-  if (returnAll) {
-    const remainingSlots = await pool.query('SELECT * FROM slot WHERE playlist_id = $1', [deletedSlot.rows[0].playlist_id]);
-    return remainingSlots.rows;
-  }
+const getSlotsByPlaylistId = async (playlistId: string): Promise<Slot[]> => {
+  validateUUID(playlistId);
+  const { rows } = await pool.query(getSlotsByPlaylistIdQuery, [playlistId]);
+  return rows;
 };
 
 const updateManySlots = async (slots: Array<Slot>): Promise<Array<Slot>> => {
@@ -77,19 +62,9 @@ const updateManySlots = async (slots: Array<Slot>): Promise<Array<Slot>> => {
   try {
     await client.query('BEGIN');
     const updatePromises = slots.map((slot) => {
-      const query = `
-        UPDATE slot
-        SET type = COALESCE($1, slot.type),
-            name = COALESCE($2, slot.name),
-            artist_name = COALESCE($3, slot.artist_name),
-            pool_id = COALESCE($4, slot.pool_id),
-            position = COALESCE($5, slot.position),
-            current_track = COALESCE($6, slot.current_track)
-        WHERE slot.id = $7
-        RETURNING *;
-      `;
+      validateUpdateSlotInput(slot);
       const values = [slot.type, slot.name, slot.artist_name, slot.pool_id, slot.position, slot.current_track, slot.id];
-      return client.query(query, values);
+      return client.query(updateManySlotsQuery, values);
     });
     const results = await Promise.all(updatePromises);
     await client.query('COMMIT');
@@ -102,11 +77,36 @@ const updateManySlots = async (slots: Array<Slot>): Promise<Array<Slot>> => {
   } 
 };
 
+const updateSlot = async (id: string, slot: SlotInput, spotify_id: string): Promise<Slot | null> => {
+  validateUUID(id);
+  validateStringId(spotify_id);
+  validateUpdateSlotInput(slot);
+  const { type, name, artist_name, position, current_track, pool_id } = slot;
+  let poolId = pool_id;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    if (spotify_id) {
+      const { id: returnedPoolId } = await upsertPool({ spotify_id }, client);
+      poolId = returnedPoolId;
+    }
+    assert(poolId, 'Missing pool id');
+    const { rows } = await client.query(updateSlotQuery, [type, name, artist_name, poolId, position, current_track, id]);
+    await client.query('COMMIT');
+    return rows.length > 0 ? {...rows[0], id } : null;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
 export {
+  createSlot,
+  deleteSlot,
   getSlotById,
   getSlotsByPlaylistId,
-  createSlot,
-  updateSlot,
   updateManySlots,
-  deleteSlot,
+  updateSlot,
 };

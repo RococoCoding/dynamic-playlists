@@ -1,4 +1,5 @@
 import { pool } from '../../index';
+import { deleteUserQuery, findUserQuery, insertUserQuery } from '../queries';
 import { findUser, insertUser, deleteUser } from './index';
 
 jest.mock('../../index', () => ({
@@ -20,7 +21,7 @@ describe('User service', () => {
 
       const result = await findUser(id);
 
-      expect(pool.query).toHaveBeenCalledWith('SELECT * FROM dp_user WHERE id = $1', [id]);
+      expect(pool.query).toHaveBeenCalledWith(findUserQuery, [id]);
       expect(result).toEqual(user);
     });
 
@@ -37,6 +38,7 @@ describe('User service', () => {
 
       // @ts-expect-error we're testing unexpected inputs
       await expect(findUser(id)).rejects.toThrow('Invalid id');
+      expect(pool.query).not.toHaveBeenCalled();
     });
 
     it('should throw an error if nonvalid id is provided', async () => {
@@ -44,6 +46,7 @@ describe('User service', () => {
 
       // @ts-expect-error we're testing unexpected inputs
       await expect(findUser(id)).rejects.toThrow('Invalid id');
+      expect(pool.query).not.toHaveBeenCalled();
     });
   });
 
@@ -55,7 +58,7 @@ describe('User service', () => {
 
       const result = await insertUser(id);
 
-      expect(pool.query).toHaveBeenCalledWith('INSERT INTO dp_user (id) VALUES ($1) RETURNING *', [id]);
+      expect(pool.query).toHaveBeenCalledWith(insertUserQuery, [id]);
       expect(result).toEqual(user);
     });
 
@@ -71,6 +74,7 @@ describe('User service', () => {
 
       // @ts-expect-error we're testing unexpected inputs
       await expect(insertUser(id)).rejects.toThrow('Invalid id');
+      expect(pool.query).not.toHaveBeenCalled();
     });
 
     it('should throw an error if nonvalid id is provided', async () => {
@@ -78,6 +82,7 @@ describe('User service', () => {
 
       // @ts-expect-error we're testing unexpected inputs
       await expect(insertUser(id)).rejects.toThrow('Invalid id');
+      expect(pool.query).not.toHaveBeenCalled();
     });
   });
 
@@ -89,16 +94,24 @@ describe('User service', () => {
 
       const result = await deleteUser(id);
 
-      expect(pool.query).toHaveBeenCalledWith('DELETE FROM dp_user WHERE id = $1 RETURNING *', [id]);
-      expect(result).toEqual(user);
+      expect(pool.query).toHaveBeenCalledWith(deleteUserQuery, [id]);
+      expect(result).toEqual(true);
     });
 
-    it('should throw an error if the user is not deleted', async () => {
-      const id = '123';
-      (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
+    it('should throw an error if user id is missing', async () => {
+      const id = undefined;
 
-      expect(pool.query).toHaveBeenCalledWith('DELETE FROM dp_user WHERE id = $1 RETURNING *', [id]);
-      await expect(deleteUser(id)).rejects.toThrow('User not deleted');
+      // @ts-expect-error we're testing unexpected inputs
+      await expect(deleteUser(id)).rejects.toThrow('Invalid id');
+      expect(pool.query).not.toHaveBeenCalled();
+    });
+
+    it('should throw an error if nonvalid id is provided', async () => {
+      const id = {};
+
+      // @ts-expect-error we're testing unexpected inputs
+      await expect(deleteUser(id)).rejects.toThrow('Invalid id');
+      expect(pool.query).not.toHaveBeenCalled();
     });
   });
 });

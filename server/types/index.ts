@@ -34,6 +34,8 @@ export interface Slot {
   type: SlotType;
 }
 
+export type SlotInput = Omit<Slot, 'id' | 'created_at' | 'last_updated'>;
+
 export interface PoolTrack {
   id: UUID;
   pool_id: UUID;

@@ -1,5 +1,7 @@
+import { PoolClient } from 'pg';
 import { pool as connectionPool } from '../../index';
 import { Pool } from '../../types/index';
+import { getPoolBySpotifyIdQuery } from '../queries';
 
 const getPoolById = async (id: string): Promise<Pool | null> => {
   const { rows } = await connectionPool.query('SELECT * FROM pool WHERE id = $1', [id]);
@@ -18,18 +20,17 @@ const getPoolBySpotifyId = async (spotifyId: string, market: string): Promise<Po
   return rows;
 };
 
-const upsertPool = async (pool: Omit<Pool, 'id' | 'last_updated'>): Promise<Pool> => {
+const upsertPool = async (pool: Omit<Pool, 'id' | 'last_updated'>, client?: PoolClient): Promise<Pool> => {
   const { spotify_id } = pool;
-  const { rows: poolRows } = await connectionPool.query(
-    `SELECT *
-     FROM pool
-     WHERE spotify_id = $1`,
+  const pgPool = client || connectionPool
+  const { rows: poolRows } = await pgPool.query(
+    getPoolBySpotifyIdQuery,
     [spotify_id]
   );
   if (poolRows[0]) {
     return poolRows[0];
   }
-  const { rows } = await connectionPool.query(
+  const { rows } = await pgPool.query(
     `INSERT INTO pool (spotify_id)
     VALUES ($1)
     ON CONFLICT (spotify_id)

@@ -6,8 +6,8 @@ import {
   getPoolTracksBySpotifyArtistId,
   insertPoolTracks,
   deleteAllTracksInPool
-} from '../../../services/pool_track/index.js';
-import { PoolTrack } from '../../../types/index.js';
+} from '../../../services/pool_track/index';
+import { PoolTrack } from '../../../types/index';
 
 const poolTracksRouter = Router();
 

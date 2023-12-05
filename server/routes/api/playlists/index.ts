@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { getPlaylistById, getPlaylistsByUserId, createPlaylist, updatePlaylist, deletePlaylist, getPlaylistBySpotifyId } from '../../../services/playlist/index.js';
-import { Playlist, PlaylistWithSlots } from '../../../types/index.js';
-import { getSlotsByPlaylistId } from '../../../services/slot/index.js';
+import { getPlaylistById, getPlaylistsByUserId, createPlaylist, updatePlaylist, deletePlaylist, getPlaylistBySpotifyId } from '../../../services/playlist/index';
+import { Playlist, PlaylistWithSlots } from '../../../types/index';
+import { getSlotsByPlaylistId } from '../../../services/slot/index';
 
 const playlistsRouter = Router();
 

@@ -6,7 +6,7 @@ import {
   getSlotsByPlaylistId,
   updateManySlots,
   updateSlot
-} from '../../../services/slot/index.js';
+} from '../../../services/slot/index';
 
 const slotsRouter = express.Router();
 
@@ -49,9 +49,10 @@ slotsRouter.put('/:id', async (req, res) => {
 slotsRouter.delete('/:id', async (req, res) => {
   const { id } = req.params;
   const { return_all } = req.query;
-  const returned = await deleteSlot(id, !!return_all);
+  const deletedSlot = await deleteSlot(id);
   if (return_all) {
-    res.json(returned);
+    const remainingSlots = await getSlotsByPlaylistId(deletedSlot.playlist_id);
+    res.json(remainingSlots);
   } else {
     res.send('Slot deleted');
   }

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { deleteUser, findUser, insertUser } from '../../../services/user/index.js';
-import { getPlaylistsByUserId } from '../../../services/playlist/index.js';
+import { deleteUser, findUser, insertUser } from '../../../services/user/index';
+import { getPlaylistsByUserId } from '../../../services/playlist/index';
 
 const usersRouter = Router();
 

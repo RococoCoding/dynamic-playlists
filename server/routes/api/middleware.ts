@@ -1,9 +1,9 @@
 import { NextFunction, Request } from "express";
 import jwt from 'jsonwebtoken';
 import { AuthResponse } from "../../types";
-import useAxios from "../../utils/axios.js";
-import { findUser } from "../../services/user/index.js";
-import { DP_ERROR_CODES, JWT_SECRET, SPOTIFY_BASE_URL } from "../../constants/index.js";
+import useAxios from "../../utils/axios";
+import { findUser } from "../../services/user/index";
+import { DP_ERROR_CODES, JWT_SECRET, SPOTIFY_BASE_URL } from "../../constants/index";
 
 export const validateUser = async (req: Request, res: AuthResponse, next: NextFunction) =>{
   const username = req.body.username;

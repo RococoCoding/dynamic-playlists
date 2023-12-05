@@ -350,7 +350,9 @@ function Playlist() {
   return (
     <main>
       <Page>
-        <ArrowBackIcon onClick={closePlaylist} />
+        <IconButton style={{ color: 'var(--light-gray)' }} onClick={closePlaylist} >
+          <ArrowBackIcon />
+        </IconButton>
         <div
           id="playlist-header"
           style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'column' }}
@@ -370,7 +372,9 @@ function Playlist() {
                 id="playlist-other-actions-container"
                 style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}
               >
-                <PublishIcon style={{ color: 'var(--light-gray)' }} onClick={publishPlaylist} />
+                <IconButton onClick={publishPlaylist}>
+                  <PublishIcon style={{ color: 'var(--light-gray)' }} />
+                </IconButton>
                 <IconButton
                   id="open-additional-playlist-actions-menu"
                   aria-controls={playlistMenuOpen ? 'open-additional-playlist-actions-menu' : undefined}

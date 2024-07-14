@@ -42,6 +42,7 @@
   - delete account
   - Are you sure? on delete list / slot
   - validation on forms
+  - hide play button until playlist is published -- need a new column in db?
 
 Follow-up Todos:
 - Figure out a better solution for getting out of sync with spotify version of the playlist?

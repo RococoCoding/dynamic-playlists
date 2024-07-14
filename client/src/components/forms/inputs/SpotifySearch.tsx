@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Autocomplete, Box, TextField } from '@mui/material';
 import { SearchResultOption, SpotifyEntry } from '../../../types';
 import { SLOT_TYPES_MAP_BY_NAME, SLOT_TYPE_TO_SPOTIFY_RETURN_TYPE } from '../../../constants';
 import { requiresArtist } from '../../../utils';
 import useSpotifyApi from '../../../utils/useSpotifyApi';
+import { debounce } from 'lodash';
 
 type Props = {
   selectedOption: SearchResultOption | null;
@@ -30,44 +31,44 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
   }
 
 
-  useEffect(() => {
-    if (textInputValue) {
-      const delayDebounceFn = setTimeout(async () => {
-        async function searchSpotify() {
-          const options = { dataAsQueryParams: true }
-          const { errorMsg, data } = await callSpotifyApi({
-            method: 'GET',
-            path: 'search',
-            data: {
-              q: textInputValue,
-              type: slotType
-            },
-          }, options);
-          if (errorMsg) {
-            console.error(errorMsg);
-          } else {
-            const { [SLOT_TYPE_TO_SPOTIFY_RETURN_TYPE[slotType]]: { items } } = data || {};
-            setSpotifyEntries(items);
-            setOptions(items.map((item: any) => {
-              let album = item.album;
-              if (slotType === 'album') {
-                album = item;
-              }
-              return {
-                label: `${item.name}${requiresArtist(slotType) ? ` - ${item.artists[0].name}` : ''}`,
-                altText: `Cover art for album ${album?.name}`,
-                imageUrl: album?.images[0]?.url,
-                value: item.id
-              }
-            }));
+  const debouncedSearch = useCallback(
+    debounce(async (value: string) => {
+      const options = { dataAsQueryParams: true }
+      const { errorMsg, data } = await callSpotifyApi({
+        method: 'GET',
+        path: 'search',
+        data: {
+          q: value,
+          type: slotType
+        },
+      }, options);
+      if (errorMsg) {
+        console.error(errorMsg);
+      } else {
+        const { [SLOT_TYPE_TO_SPOTIFY_RETURN_TYPE[slotType]]: { items } } = data || {};
+        setSpotifyEntries(items);
+        setOptions(items.map((item: any) => {
+          let album = item.album;
+          if (slotType === 'album') {
+            album = item;
           }
-        }
+          return {
+            label: `${item.name}${requiresArtist(slotType) ? ` - ${item.artists[0].name}` : ''}`,
+            altText: `Cover art for album ${album?.name}`,
+            imageUrl: album?.images[0]?.url,
+            value: item.id
+          }
+        }));
+      }
+    }, 800),
+    [] // dependencies
+  );
 
-        await searchSpotify();
-      }, 800)
-      return () => clearTimeout(delayDebounceFn)
-    }
-  }, [callSpotifyApi, slotType, textInputValue]);
+  const handleInputChange = (value: string) => {
+    debouncedSearch(value);
+    setTextInputValue(value);
+  };
+
 
   return (
     <Autocomplete
@@ -92,7 +93,11 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
           {...params}
           label="Search"
           variant="outlined"
-          onChange={(e) => setTextInputValue(e.target.value)}
+          onChange={(e) => { 
+            if (e.target.value !== textInputValue) {
+              handleInputChange(e.target.value)
+            }
+          }}
           value={selectedOption?.label || textInputValue}
         />
       )}

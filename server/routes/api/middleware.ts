@@ -2,7 +2,7 @@ import { NextFunction, Request } from "express";
 import jwt from 'jsonwebtoken';
 import { AuthResponse } from "../../types";
 import useAxios from "../../utils/axios.js";
-import { findUser } from "../../services/user/index.js";
+import { findUser, insertUser } from "../../services/user/index.js";
 import { DP_ERROR_CODES, JWT_SECRET, SPOTIFY_BASE_URL } from "../../constants/index.js";
 
 export const validateUser = async (req: Request, res: AuthResponse, next: NextFunction) =>{
@@ -35,14 +35,16 @@ export const validateUser = async (req: Request, res: AuthResponse, next: NextFu
 
   // verify corresponding user in DP db
   try {
-    const user = await findUser(username);
-    if (user) {
-      res.locals.username = username;
-      next();
-    } else {
-      console.log('user not found in db', username);
-      return res.status(404).json(errMsg);
+    let user = await findUser(username);
+    if (!user) {
+      user = await insertUser(username);
+    } 
+    if (!user) {
+      console.log('Could not find or insert user', username);
+      return res.status(500).json(errMsg);
     }
+    res.locals.username = username;
+    next();
   } catch (e) {
     console.log(e);
     return res.status(500).json(errMsg);

@@ -72,7 +72,7 @@ export const getRandomTrack = async (slot: FullSlot, callSpotifyApi: Function) =
     case SLOT_TYPES_MAP_BY_NAME.album:
       if (!pool_id || !pool_spotify_id) {
         if (REACT_APP_ENV === ENVIRONMENTS.development) {
-          console.log('Expected pool_id & pool_spotify_id for album slot')
+          console.log('Expected pool_id & pool_spotify_id for album slot', slot)
         }
         return;
       }
@@ -90,7 +90,7 @@ export const getRandomTrack = async (slot: FullSlot, callSpotifyApi: Function) =
     case SLOT_TYPES_MAP_BY_NAME.artist:
       if (!pool_id || !pool_spotify_id) {
         if (REACT_APP_ENV === ENVIRONMENTS.development) {
-          console.log('Expected pool_id & pool_spotify_id for artist slot')
+          console.log('Expected pool_id & pool_spotify_id for artist slot', slot)
         }
         return;
       }

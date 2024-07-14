@@ -23,7 +23,6 @@
     "migrate:up": "node-pg-migrate up",
     "migrate:down": "node-pg-migrate down",
     "migrate:redo": "node-pg-migrate redo",
-    "migrate:creatåe": "node-pg-migrate create",
     "build": "rm -rf build && tsc"
   },
   "devDependencies": {

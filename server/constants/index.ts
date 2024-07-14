@@ -6,8 +6,7 @@ export const {
   SPOTIFY_REDIRECT_URI,
   DB_USER,
   DB_PASSWORD,
-  DB_URL,
-  DATABASE_URL,
+  DATABASE_URL, // DATABASE instead of DB bc of node-pg-migrate
   SECRET_KEY,
   JWT_SECRET,
 } = process.env;

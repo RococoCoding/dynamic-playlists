@@ -11,6 +11,7 @@
   - deploy + ci/cd
 - Med
   - finish error boundaries
+  - verify tokens on protected routes instead of just grabbing a possibly expired token from localstorage
   - Support drag n drop for slot positioning
   - Styling on mobile (icons taking up too much space)
   - bugfix: handle key error when adding two of identical slots
@@ -60,6 +61,9 @@ Follow-up Todos:
 - private playlists
 - playlist descriptions
 - display playlist length
+- display currently selected track on non-track items w/ controls to get a new song
+- multiple albums & artists? (could be solved by adding playback frequency controls)
+- option to update playlist as you go instead of needing to publish?
 
 </details>
 

@@ -1,4 +1,5 @@
 import { pool } from '../../index.js';
+import { getLTTByUser } from '../ltt/index.js';
 
 
 const findUser = async (id: string) => {
@@ -10,6 +11,26 @@ const findUser = async (id: string) => {
 
   return rows[0];
 };
+
+const findUserWithLTT = async (id: string) => {
+  const { rows } = await pool.query(
+    `SELECT *
+    FROM dp_user
+    WHERE id = $1`,
+    [id]
+  );
+  if (rows.length > 1) {
+    console.error(`Multiple users found for user ${id}: `, rows);
+    throw new Error('More than one user found');
+  }
+  const user = rows[0];
+  if (!user) {
+    throw new Error('Could not find user');
+  }
+  const ltt = await getLTTByUser(id);
+  user.ltt = ltt;
+  return user;
+}
 
 const insertUser = async (id: string) => {
   const { rows } = await pool.query(
@@ -42,6 +63,7 @@ const deleteUser = async (id: string) => {
 export {
   deleteUser,
   findUser,
+  findUserWithLTT,
   insertUser,
   updateUser,
 }

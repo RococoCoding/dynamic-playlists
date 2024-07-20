@@ -47,10 +47,6 @@ const callApi = async ({
     return { data: res.data };
   } catch (error: any) {
     const spotifyAccessToken = getAccessToken()
-    if (REACT_APP_ENV === ENVIRONMENTS.development) {
-      console.log('callApi input', { baseUrl, method, path, data: JSON.stringify(data), spotifyAccessToken });
-      console.error('callApi error', getErrorMessage(error), error);
-    }
     if (getErrorCode(error) === DP_ERROR_CODES.requestToken && tokenExists(spotifyAccessToken)) {
       const userId = getUserId();
       // request new dp token
@@ -70,6 +66,10 @@ const callApi = async ({
         headers: { ...headers, Authorization: dpToken }
       });
       return { data: res.data }
+    }
+    if (REACT_APP_ENV === ENVIRONMENTS.development) {
+      console.log('callApi input', { baseUrl, method, path, data: JSON.stringify(data), spotifyAccessToken });
+      console.error('callApi error', getErrorCode(error), getErrorMessage(error), error);
     }
     throw error;
   }

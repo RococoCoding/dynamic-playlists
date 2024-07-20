@@ -106,6 +106,7 @@ function Playlist() {
   const slotMenuOpen = Boolean(slotMenuAnchorEl);
   const [playlistMenuAnchorEl, setPlaylistMenuAnchorEl] = useState<null | HTMLElement>(null);
   const playlistMenuOpen = Boolean(playlistMenuAnchorEl);
+  const [slotMenuId, setSlotMenuId] = useState<string | null>(null);
 
   const EditSlotDialogContent = (
     <EditSlot
@@ -225,7 +226,7 @@ function Playlist() {
     }
   }
 
-  const selectSlotToEdit = (id: string) => {
+  const selectSlotToEdit = (id: string | null) => {
     const slot = slots.find((slot) => slot.id === id);
     if (slot) {
       const option = {
@@ -281,7 +282,8 @@ function Playlist() {
     }
   }
 
-  const handleDeleteSlot = async (id: string) => {
+  const handleDeleteSlot = async (id: string | null) => {
+    if (!id) return;
     try {
       const newSlots = await deleteSlot(id);
       if (!newSlots || !Array.isArray(newSlots) || newSlots.length !== slots.length - 1) {
@@ -495,33 +497,18 @@ function Playlist() {
                               </p>
                             </div>
                             <IconButton
-                              id="open-slot-actions-menu"
+                              id='open-slot-actions-menu'
                               aria-controls={slotMenuOpen ? 'open-slot-actions-menu' : undefined}
                               aria-haspopup="true"
                               aria-expanded={slotMenuOpen ? 'true' : undefined}
                               onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
                                 setSlotMenuAnchorEl(event.currentTarget);
+                                setSlotMenuId(slot.id);
                               }}
                               style={{ color: 'white' }}
                             >
                               <MoreVertIcon />
                             </IconButton>
-                            <Menu
-                              id="view-slot-actions-menu"
-                              anchorEl={slotMenuAnchorEl}
-                              open={slotMenuOpen}
-                              onClose={() => { setSlotMenuAnchorEl(null); }}
-                              MenuListProps={{
-                                'aria-labelledby': 'view-slot-actions-menu',
-                              }}
-                            >
-                              <MenuItem onClick={() => selectSlotToEdit(slot.id)}>
-                                Edit Slot
-                              </MenuItem>
-                              <MenuItem onClick={() => handleDeleteSlot(slot.id)} >
-                                Delete Slot
-                              </MenuItem>
-                            </Menu>
                           </StyledListItem>
                         )}
                       </Draggable>
@@ -533,6 +520,22 @@ function Playlist() {
             </Droppable>
           </DragDropContext>
         </List>
+        <Menu
+          id="view-slot-actions-menu"
+          anchorEl={slotMenuAnchorEl}
+          open={slotMenuOpen}
+          onClose={() => { setSlotMenuAnchorEl(null); setSlotMenuId(null); }}
+          MenuListProps={{
+            'aria-labelledby': 'view-slot-actions-menu',
+          }}
+        >
+          <MenuItem onClick={() => selectSlotToEdit(slotMenuId)}>
+            Edit Slot
+          </MenuItem>
+          <MenuItem onClick={() => handleDeleteSlot(slotMenuId)} >
+            Delete Slot
+          </MenuItem>
+        </Menu>
       </Page>
       {
         openEditSlotDialog &&

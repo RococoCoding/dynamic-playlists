@@ -5,9 +5,12 @@ import useSpotifyApi from "../utils/useSpotifyApi";
 import { useNavigate } from "react-router-dom";
 import getAuthorizeSpotifyArgs from "../utils/authorizeSpotify";
 import { setUserId, userId } from "../utils";
+import { useContext } from "react";
+import { UserContext } from "../contexts/user";
 
 function Login() {
   const { callSpotifyApi } = useSpotifyApi();
+  const { setAuthenticatedContext } = useContext(UserContext);
   const navigate = useNavigate();
 
   const startLogin = async () => {
@@ -33,6 +36,7 @@ function Login() {
         if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log('error getting spotify user', e);
         }
+        setAuthenticatedContext(false)
         const args = await getAuthorizeSpotifyArgs();
         window.location.href = 'https://accounts.spotify.com/authorize?' + args;
       }

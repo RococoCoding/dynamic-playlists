@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 import useSpotifyApi from "../utils/useSpotifyApi";
 import { requestSpotifyTokens, setTokens } from "../utils/tokens";
 import { getDpUser } from "../utils/users/dp";
@@ -8,11 +8,13 @@ import { useNavigate } from "react-router-dom";
 import { setUserId } from "../utils";
 import { useSnackbarContext } from "../contexts/snackbar";
 import { Backdrop, CircularProgress } from "@mui/material";
+import { UserContext } from "../contexts/user";
 
 // Callback function after user authorizes the DP app with Spotify.
 // Retrieves access & refresh tokens and fetches the user.
 function RequestToken() {
   const { callSpotifyApi } = useSpotifyApi();
+  const { setAuthenticatedContext } = useContext(UserContext);
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   let code = urlParams.get('code');
@@ -49,6 +51,7 @@ function RequestToken() {
         if (REACT_APP_ENV === ENVIRONMENTS.development) {
           console.log('Error authenticating: ', e);
         }
+        setAuthenticatedContext(false)
         setErrorSnackbar(`Error authenticating. Please refresh the page and try again.`);
         navigate('/');
       }

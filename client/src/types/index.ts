@@ -49,12 +49,18 @@ export type SpotifyAlbumType = {
   album_group: string;
 }
 
+export type SpotifyPlaylistTracksType = {
+  items: SpotifyTrackType[],
+  total: number
+}
+
 export type SpotifyPlaylistType = {
   id: string;
   name: string;
   images: Array<{ url: string }>;
   owner: { display_name: string };
   snapshot_id: string;
+  tracks: SpotifyPlaylistTracksType
 }
 
 export type SpotifyTrackType = {

@@ -31,9 +31,9 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
   }
 
 
-  const debouncedSearch = useCallback(
+  const debouncedSearch = 
     debounce(async (value: string) => {
-      const options = { dataAsQueryParams: true }
+      const spotifyOptions = { dataAsQueryParams: true }
       const { errorMsg, data } = await callSpotifyApi({
         method: 'GET',
         path: 'search',
@@ -41,32 +41,34 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
           q: value,
           type: slotType
         },
-      }, options);
+      }, spotifyOptions);
       if (errorMsg) {
         console.error(errorMsg);
-      } else {
-        const { [SLOT_TYPE_TO_SPOTIFY_RETURN_TYPE[slotType]]: { items } } = data || {};
-        setSpotifyEntries(items);
-        setOptions(items.map((item: any) => {
-          let album = item.album;
-          if (slotType === 'album') {
-            album = item;
-          }
-          return {
-            label: `${item.name}${requiresArtist(slotType) ? ` - ${item.artists[0].name}` : ''}`,
-            altText: `Cover art for album ${album?.name}`,
-            imageUrl: album?.images[0]?.url,
-            value: item.id
-          }
-        }));
+        return
       }
-    }, 800),
-    [] // dependencies
-  );
 
-  const handleInputChange = (value: string) => {
-    debouncedSearch(value);
-    setTextInputValue(value);
+      const { [SLOT_TYPE_TO_SPOTIFY_RETURN_TYPE[slotType]]: { items } } = data || {};
+      const formOptions = items.map((item: any) => {
+        let album = item.album;
+        if (slotType === 'album') {
+          album = item;
+        }
+        return {
+          label: `${item.name}${requiresArtist(slotType) ? ` - ${item.artists[0].name}` : ''}`,
+          altText: `Cover art for album ${album?.name}`,
+          imageUrl: album?.images[0]?.url,
+          value: item.id
+        }
+      })
+      setOptions(formOptions);
+      setTextInputValue(value);
+      setSpotifyEntries(items);
+    }, 800);
+
+  const handleInputChange = async (value: string) => {
+    if (value) {
+      await debouncedSearch(value);
+    }
   };
 
 
@@ -93,9 +95,9 @@ function SearchInput({ selectedOption, setSelectedOption, setSelectedEntry, slot
           {...params}
           label="Search"
           variant="outlined"
-          onChange={(e) => { 
+          onChange={async (e) => { 
             if (e.target.value !== textInputValue) {
-              handleInputChange(e.target.value)
+              await handleInputChange(e.target.value)
             }
           }}
           value={selectedOption?.label || textInputValue}

@@ -37,12 +37,12 @@ const getPlaylistBySpotifyId = async (spotifyId: string): Promise<PlaylistWithSl
 };
 
 const createPlaylist = async (playlist: Omit<Playlist, 'id' | 'created_at' | 'last_updated'>): Promise<Playlist> => {
-  const { title, created_by, last_updated_by } = playlist;
+  const { title, created_by, last_updated_by, spotify_id } = playlist;
   const { rows } = await pool.query(
-    `INSERT INTO playlist (title, created_by, last_updated_by)
-     VALUES ($1, $2, $3)
+    `INSERT INTO playlist (title, created_by, last_updated_by, spotify_id)
+     VALUES ($1, $2, $3, $4)
      RETURNING *`,
-    [title, created_by, last_updated_by]
+    [title, created_by, last_updated_by, spotify_id]
   );
   const playlistRow = rows[0];
   await pool.query(

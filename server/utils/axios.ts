@@ -6,17 +6,25 @@ type Props = {
   path: string;
   data?: any;
   token?: string;
+  headers?: Header;
+  auth?: Auth;
+  params?: URLSearchParams;
 }
 
 type Header = {
-  Authorization: string;
+  Authorization?: string;
+  'User-Agent'?: string;
 }
+
+type Auth = { username: string; password: string; };
 
 type AxiosInput = {
   method: string;
   url: string;
   data?: any;
   headers?: Header;
+  auth?: Auth,
+  params?: URLSearchParams
 }
 
 const useAxios = async ({
@@ -25,15 +33,21 @@ const useAxios = async ({
   path,
   data,
   token,
+  headers,
+  auth,
+  params
 }: Props): Promise<any> => {
   try {
     const axiosInput: AxiosInput = {
         method,
         url: `${baseUrl}${path}`,
         data,
+        headers,
+        auth,
+        params
     }
     if (token) {
-      axiosInput.headers = { Authorization: `Bearer ${token}` }
+      axiosInput.headers = { ...axiosInput.headers, Authorization: `Bearer ${token}` }
     }
     const res = await axios(axiosInput);
     if (res.data.error) {
@@ -43,7 +57,7 @@ const useAxios = async ({
       data: res.data,
     };
   } catch (error: any) {
-    console.log('axios input: ', { baseUrl, method, path, data, token });
+    console.log('axios input: ', { baseUrl, method, path, data, token, headers });
     console.log('axios error: ', error);
     return {
       errorMsg: error?.message || error,

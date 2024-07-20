@@ -100,7 +100,7 @@ function WebPlayback() {
       const startPlayer = async () => {
         window.onSpotifyWebPlaybackSDKReady = () => {
           const player = new window.Spotify.Player({
-            name: `Dynamic Playlists - Spotify Web Playback SDK`,
+            name: `Dynamic Playlists`,
             getOAuthToken: async (cb: SpotifyCallback) => {
               // retrieve a new token
               try {
@@ -170,9 +170,17 @@ function WebPlayback() {
             // had problems syncing state + async calls with listener so pushing all updates to component state
             // and handling updates in useEffect
             setPlayerState(state);
-            player.getCurrentState().then(state => {
-              (!state) ? setInstanceActive(false) : setInstanceActive(true)
-            });
+            try {
+              if (player) {
+                player.getCurrentState().then(state => {
+                  (!state) ? setInstanceActive(false) : setInstanceActive(true)
+                });
+              }
+            } catch (e) {
+              if (REACT_APP_ENV === ENVIRONMENTS.development) {
+                console.log('error getting player state', e);
+              }
+            }
           }));
 
           player.connect();
